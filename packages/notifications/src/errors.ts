@@ -18,3 +18,12 @@ export class NotificationHttpError extends Error {
     this.status = status;
   }
 }
+
+export class NotificationConfigurationError extends Error {
+  readonly code = "INVALID_NOTIFICATION_CONFIGURATION";
+
+  constructor(message: string) {
+    super(message);
+    this.name = "NotificationConfigurationError";
+  }
+}

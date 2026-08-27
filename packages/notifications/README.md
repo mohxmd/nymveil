@@ -5,12 +5,13 @@ messages through pluggable providers.
 
 ## Current channels
 
-| Channel | Configuration     | Delivery                 |
-| ------- | ----------------- | ------------------------ |
-| Slack   | `webhookUrl`      | Incoming webhook         |
-| Discord | `webhookUrl`      | Channel webhook          |
-| Email   | `sendEmailAction` | Injected email transport |
-| Webhook | `url`             | Custom HTTP endpoint     |
+| Channel  | Configuration        | Delivery                 |
+| -------- | -------------------- | ------------------------ |
+| Slack    | `webhookUrl`         | Incoming webhook         |
+| Discord  | `webhookUrl`         | Channel webhook          |
+| Email    | `sendEmailAction`    | Injected email transport |
+| Telegram | `botToken`, `chatId` | Bot API `sendMessage`    |
+| Webhook  | `url`                | Custom HTTP endpoint     |
 
 ## Quick start
 
@@ -44,6 +45,42 @@ Provider configuration makes a channel available; it does not automatically
 broadcast notifications. Set `defaultChannels` for normal delivery, or pass
 `channels` for an individual notification. If neither is provided, `send()`
 throws `NoNotificationChannelsError`.
+
+## Telegram
+
+Telegram delivery uses the Bot API directly and does not add an SDK dependency.
+Plain text is used by default; `parseMode` can be set to `HTML` or `MarkdownV2`
+when the message content is prepared for that format.
+
+```ts
+const notifications = new NotificationClient({
+  telegram: {
+    botToken: TELEGRAM_BOT_TOKEN,
+    chatId: TELEGRAM_CHAT_ID,
+  },
+  defaultChannels: ["telegram"],
+});
+```
+
+## Custom providers
+
+Add providers that are not built into the package without modifying the client.
+
+```ts
+import { NotificationClient, type NotificationProvider } from "@nymveil/notifications";
+
+const telegramProvider: NotificationProvider = {
+  async send(payload) {
+    await telegramApi.sendMessage(payload.message);
+    return { channel: "telegram", success: true };
+  },
+};
+
+const notifications = new NotificationClient({
+  defaultChannels: ["telegram"],
+  providers: { telegram: telegramProvider },
+});
+```
 
 ## Email
 

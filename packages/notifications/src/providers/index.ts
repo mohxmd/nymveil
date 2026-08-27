@@ -6,5 +6,7 @@ export type { EmailProviderConfig } from "./email";
 export { EmailProvider } from "./email";
 export type { SlackProviderConfig } from "./slack";
 export { SlackProvider } from "./slack";
+export type { TelegramProviderConfig } from "./telegram";
+export { TelegramProvider } from "./telegram";
 export type { WebhookProviderConfig } from "./webhook";
 export { WebhookProvider } from "./webhook";

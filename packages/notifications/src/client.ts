@@ -5,9 +5,11 @@ import type { EmailProviderConfig } from "./providers/email";
 import { EmailProvider } from "./providers/email";
 import type { SlackProviderConfig } from "./providers/slack";
 import { SlackProvider } from "./providers/slack";
+import type { TelegramProviderConfig } from "./providers/telegram";
+import { TelegramProvider } from "./providers/telegram";
 import type { WebhookProviderConfig } from "./providers/webhook";
 import { WebhookProvider } from "./providers/webhook";
-import { NoNotificationChannelsError } from "./errors";
+import { NoNotificationChannelsError, NotificationConfigurationError } from "./errors";
 import type {
   NotificationChannel,
   NotificationDeliveryOptions,
@@ -23,7 +25,9 @@ export interface NotificationClientConfig {
   defaultTimeout?: number;
   discord?: DiscordProviderConfig;
   email?: EmailProviderConfig;
+  providers?: Record<string, NotificationProvider>;
   slack?: SlackProviderConfig;
+  telegram?: TelegramProviderConfig;
   webhook?: WebhookProviderConfig;
 }
 
@@ -52,6 +56,9 @@ export class NotificationClient {
     if (config.slack) {
       this.providers.set("slack", new SlackProvider(withDefaults(config.slack)));
     }
+    if (config.telegram) {
+      this.providers.set("telegram", new TelegramProvider(withDefaults(config.telegram)));
+    }
     if (config.email) {
       this.providers.set("email", new EmailProvider(withDefaults(config.email)));
     }
@@ -60,6 +67,23 @@ export class NotificationClient {
     }
     if (config.discord) {
       this.providers.set("discord", new DiscordProvider(withDefaults(config.discord)));
+    }
+
+    for (const [channel, provider] of Object.entries(config.providers ?? {})) {
+      if (!channel.trim()) {
+        throw new NotificationConfigurationError("Custom provider channel cannot be empty");
+      }
+      if (this.providers.has(channel as NotificationChannel)) {
+        throw new NotificationConfigurationError(
+          `Provider for channel '${channel}' is already configured`,
+        );
+      }
+      if (!provider || typeof provider.send !== "function") {
+        throw new NotificationConfigurationError(
+          `Provider for channel '${channel}' must implement send()`,
+        );
+      }
+      this.providers.set(channel as NotificationChannel, provider);
     }
 
     this.defaultChannels = [...new Set(config.defaultChannels ?? [])];
@@ -109,7 +133,7 @@ export class NotificationClient {
         } satisfies NotificationResult;
       }
       if (result.status === "fulfilled") {
-        return result.value;
+        return { ...result.value, channel };
       }
       return {
         success: false,
@@ -133,7 +157,7 @@ export class NotificationClient {
       });
     }
 
-    return provider.send(payload, options);
+    return provider.send(payload, options).then((result) => ({ ...result, channel }));
   }
 
   hasChannel(channel: NotificationChannel): boolean {

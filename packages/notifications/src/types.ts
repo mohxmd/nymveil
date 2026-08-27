@@ -1,4 +1,6 @@
-export type NotificationChannel = "slack" | "discord" | "email" | "webhook";
+export type BuiltInNotificationChannel = "slack" | "discord" | "email" | "telegram" | "webhook";
+
+export type NotificationChannel = BuiltInNotificationChannel | (string & {});
 
 export type NotificationPriority = "low" | "normal" | "high" | "urgent";
 
@@ -82,4 +84,15 @@ export interface WebhookPayload {
   method?: "GET" | "POST" | "PUT" | "PATCH";
   timeout?: number;
   url: string;
+}
+
+export type TelegramParseMode = "HTML" | "MarkdownV2";
+
+export interface TelegramPayload {
+  chat_id: number | string;
+  disable_notification?: boolean;
+  message_thread_id?: number;
+  parse_mode?: TelegramParseMode;
+  protect_content?: boolean;
+  text: string;
 }

@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
 import { NotificationClient } from "../src/client";
-import { NoNotificationChannelsError } from "../src/errors";
+import { NoNotificationChannelsError, NotificationConfigurationError } from "../src/errors";
 import type { NotificationChannel } from "../src/types";
 
 describe("NotificationClient", () => {
@@ -86,6 +86,38 @@ describe("NotificationClient", () => {
 
     expect(results).toEqual([{ channel: "email", success: true }]);
     expect(attempts).toBe(2);
+  });
+
+  test("supports custom providers without coupling the client to a channel", async () => {
+    const provider = {
+      send: async () => ({
+        channel: "discord" as const,
+        success: true,
+      }),
+    };
+    const client = new NotificationClient({
+      defaultChannels: ["telegram"],
+      providers: { telegram: provider },
+    });
+
+    const results = await client.send({
+      title: "Delivery status",
+      message: "A notification is ready.",
+    });
+
+    expect(results).toEqual([{ channel: "telegram", success: true }]);
+  });
+
+  test("rejects custom providers that collide with built-in channels", () => {
+    expect(
+      () =>
+        new NotificationClient({
+          discord: { webhookUrl: "https://discord.com/api/webhooks/123/token" },
+          providers: {
+            discord: { send: async () => ({ channel: "discord", success: true }) },
+          },
+        }),
+    ).toThrow(NotificationConfigurationError);
   });
 
   test("snapshots caller-owned channels before awaiting providers", async () => {
