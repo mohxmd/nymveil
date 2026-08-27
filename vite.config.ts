@@ -5,7 +5,8 @@ export default defineConfig({
     ignorePatterns: [
       "node_modules/**",
       "**/node_modules/**",
-      "apps/web/dist/**",
+      "apps/web/.svelte-kit/**",
+      "apps/web/build/**",
       "apps/web/.output/**",
       "apps/server/dist/**",
       "packages/db/dist/**",
@@ -23,7 +24,8 @@ export default defineConfig({
     ignorePatterns: [
       "node_modules/**",
       "**/node_modules/**",
-      "apps/web/dist/**",
+      "apps/web/.svelte-kit/**",
+      "apps/web/build/**",
       "apps/web/.output/**",
       "apps/server/dist/**",
       "packages/db/dist/**",

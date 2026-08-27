@@ -6,6 +6,10 @@ args = ["-y", "@upstash/context7-mcp"]
 type = "sse"
 url = "https://docs.mcp.cloudflare.com/sse"
 
+[mcp_servers.svelte]
+type = "http"
+url = "https://mcp.svelte.dev/mcp"
+
 [mcp_servers.better-auth]
 type = "http"
 url = "https://mcp.inkeep.com/better-auth/mcp"

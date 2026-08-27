@@ -13,7 +13,8 @@
       "@types/node": "^26.2.0",
       "@cloudflare/workers-types": "^5.20260728.1",
       "libsql": "0.5.29",
-      "better-auth": "1.7.1"
+      "better-auth": "1.7.1",
+      "evlog": "^2.27.1"
     }
   },
   "type": "module",

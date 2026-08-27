@@ -35,15 +35,15 @@ Nymveil is in early development. The project is being built around an authentica
 
 The repository is being organized so product rules remain independent from infrastructure providers:
 
-| Package or app | Responsibility |
-| --- | --- |
-| `@nymveil/core` | Framework-independent domain rules and use cases |
-| `@nymveil/db` | Drizzle and Turso schema, migrations, and persistence |
+| Package or app           | Responsibility                                        |
+| ------------------------ | ----------------------------------------------------- |
+| `@nymveil/core`          | Framework-independent domain rules and use cases      |
+| `@nymveil/db`            | Drizzle and Turso schema, migrations, and persistence |
 | `@nymveil/notifications` | Reusable notification providers and delivery behavior |
-| `@nymveil/auth` | Authentication integration |
-| `apps/server` | Hono API and Cloudflare Worker adapters |
-| `apps/web` | Authenticated web dashboard |
-| `packages/infra` | Cloudflare and deployment infrastructure |
+| `@nymveil/auth`          | Authentication integration                            |
+| `apps/server`            | Hono API and Cloudflare Worker adapters               |
+| `apps/web`               | Authenticated web dashboard                           |
+| `packages/infra`         | Cloudflare and deployment infrastructure              |
 
 More product and architecture context is available in [`docs/nymveil.md`](./docs/nymveil.md).
 
@@ -56,7 +56,7 @@ More product and architecture context is available in [`docs/nymveil.md`](./docs
 - Turso / libSQL
 - Drizzle ORM
 - Better Auth
-- Vite and SolidJS
+- SvelteKit and Vite
 
 ## Development
 

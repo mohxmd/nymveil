@@ -1,12 +1,11 @@
 import { z } from "zod";
 
-const envSchema = z.object({
-  VITE_SERVER_URL: z.preprocess(
-    (value) => (value === "" ? undefined : value),
-    z.url(),
-  ),
+const webEnvSchema = z.object({
+  PUBLIC_SERVER_URL: z.preprocess((value) => (value === "" ? undefined : value), z.url()),
 });
 
-export const env = envSchema.parse({
-  VITE_SERVER_URL: import.meta.env.VITE_SERVER_URL,
-});
+export type WebEnv = z.infer<typeof webEnvSchema>;
+
+export function parseWebEnv(input: unknown): WebEnv {
+  return webEnvSchema.parse(input);
+}

@@ -35,16 +35,23 @@ export default Alchemy.Stack(
   },
   Effect.gen(function* () {
     const serverWorker = yield* server;
-    const webWorker = yield* Cloudflare.Website.Vite("web", {
-      rootDir: "../../apps/web",
+    // _worker.js is a shim importing outside its directory, so it must be bundled
+    const webWorker = yield* Cloudflare.Website.StaticSite("web", {
+      cwd: "../../apps/web",
+      command: "bun run build",
+      // Rebuild shared workspace dependencies until Alchemy has a workspace-aware default memo.
+      memo: false,
+      outdir: ".svelte-kit/cloudflare",
+      main: "../../apps/web/.svelte-kit/cloudflare/_worker.js",
       compatibility: {
         flags: ["nodejs_compat"],
       },
       env: {
-        VITE_SERVER_URL: serverWorker.url.as<string>(),
+        PUBLIC_SERVER_URL: serverWorker.url.as<string>(),
       },
       dev: {
-        port: 3001,
+        command: "bun run dev:bare",
+        url: "http://localhost:5173",
       },
     });
 

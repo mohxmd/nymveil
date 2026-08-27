@@ -1,13 +1,24 @@
 node_modules
-.DS_Store
-dist
+
+# Output
 .output
 .vercel
 .netlify
-*.local
-.env
-.env.*
-
 .wrangler
 .alchemy
-.dev.vars*
+/.svelte-kit
+/build
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Env
+.env
+.env.*
+!.env.example
+!.env.test
+
+# Vite
+vite.config.js.timestamp-*
+vite.config.ts.timestamp-*
