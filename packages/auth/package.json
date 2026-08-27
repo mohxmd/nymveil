@@ -1,0 +1,24 @@
+{
+  "name": "@nymveil/auth",
+  "type": "module",
+  "exports": {
+    ".": {
+      "default": "./src/index.ts"
+    },
+    "./*": {
+      "default": "./src/*.ts"
+    }
+  },
+  "scripts": {},
+  "dependencies": {
+    "@nymveil/db": "workspace:*",
+    "@nymveil/env": "workspace:*",
+    "better-auth": "catalog:",
+    "dotenv": "catalog:",
+    "zod": "catalog:"
+  },
+  "devDependencies": {
+    "@nymveil/config": "workspace:*",
+    "typescript": "catalog:"
+  }
+}

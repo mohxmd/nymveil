@@ -1,0 +1,3 @@
+{
+  "extends": "@nymveil/config/tsconfig.base.json"
+}

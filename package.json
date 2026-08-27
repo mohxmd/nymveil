@@ -1,0 +1,57 @@
+{
+  "name": "nymveil",
+  "private": true,
+  "workspaces": {
+    "packages": [
+      "apps/*",
+      "packages/*"
+    ],
+    "catalog": {
+      "dotenv": "^17.4.2",
+      "zod": "^4.4.3",
+      "typescript": "^6.0.3",
+      "@types/node": "^26.2.0",
+      "@cloudflare/workers-types": "^5.20260728.1",
+      "libsql": "0.5.29",
+      "better-auth": "1.7.1"
+    }
+  },
+  "type": "module",
+  "scripts": {
+    "dev": "vp run -r dev",
+    "build": "vp run -r build",
+    "check-types": "vp run -r check-types",
+    "check": "vp check && vp run -r check-types",
+    "lint": "vp lint",
+    "format": "vp fmt",
+    "staged": "vp staged",
+    "hooks:setup": "vp config",
+    "dev:web": "vp run --filter web dev:bare",
+    "dev:tui": "vp run --filter tui dev",
+    "dev:server": "vp run --filter server dev:bare",
+    "db:push": "vp run --filter @nymveil/db db:push",
+    "db:studio": "vp run --filter @nymveil/db db:studio",
+    "db:generate": "vp run --filter @nymveil/db db:generate",
+    "db:migrate": "vp run --filter @nymveil/db db:migrate",
+    "db:local": "vp run --filter @nymveil/db db:local",
+    "deploy": "vp run --filter @nymveil/infra deploy",
+    "destroy": "vp run --filter @nymveil/infra destroy"
+  },
+  "dependencies": {
+    "@nymveil/env": "workspace:*",
+    "dotenv": "catalog:",
+    "zod": "catalog:"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "catalog:",
+    "@nymveil/config": "workspace:*",
+    "@types/node": "catalog:",
+    "rolldown": "1.2.0",
+    "typescript": "catalog:",
+    "vite-plus": "0.2.6"
+  },
+  "overrides": {
+    "vite": "npm:@voidzero-dev/vite-plus-core@0.2.6"
+  },
+  "packageManager": "bun@1.4.0"
+}

@@ -1,0 +1,28 @@
+{
+  "name": "server",
+  "type": "module",
+  "main": "src/index.ts",
+  "scripts": {
+    "build": "tsdown",
+    "check-types": "tsc -b",
+    "compile": "bun build --compile --minify --sourcemap --bytecode ./src/index.ts --outfile server"
+  },
+  "dependencies": {
+    "@nymveil/auth": "workspace:*",
+    "@nymveil/db": "workspace:*",
+    "@nymveil/env": "workspace:*",
+    "better-auth": "catalog:",
+    "dotenv": "catalog:",
+    "evlog": "^2.22.4",
+    "hono": "^4.12.32",
+    "libsql": "catalog:",
+    "zod": "catalog:"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "catalog:",
+    "@nymveil/config": "workspace:*",
+    "@types/node": "catalog:",
+    "tsdown": "^0.22.14",
+    "typescript": "catalog:"
+  }
+}
