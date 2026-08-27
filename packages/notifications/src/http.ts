@@ -83,7 +83,7 @@ function validateUrl(url: string): URL {
 
 export async function safeFetch(url: string, init: SafeFetchInit = {}): Promise<Response> {
   const {
-    followRedirects = true,
+    followRedirects = false,
     maxRedirects = DEFAULT_MAX_REDIRECTS,
     timeoutMs = DEFAULT_TIMEOUT_MS,
     signal: externalSignal,
@@ -94,7 +94,7 @@ export async function safeFetch(url: string, init: SafeFetchInit = {}): Promise<
   let currentUrl = url;
 
   for (let redirect = 0; redirect <= maxRedirects; redirect += 1) {
-    validateUrl(currentUrl);
+    const parsedCurrentUrl = validateUrl(currentUrl);
     const response = await fetch(currentUrl, {
       ...fetchInit,
       redirect: "manual",
@@ -110,7 +110,12 @@ export async function safeFetch(url: string, init: SafeFetchInit = {}): Promise<
       return response;
     }
 
-    currentUrl = new URL(location, currentUrl).toString();
+    const nextUrl = validateUrl(new URL(location, parsedCurrentUrl).toString());
+    if (nextUrl.origin !== parsedCurrentUrl.origin) {
+      throw new UrlValidationError("Cross-origin redirects are not supported", nextUrl.hostname);
+    }
+
+    currentUrl = nextUrl.toString();
   }
 
   throw new UrlValidationError(`Too many redirects (>${maxRedirects})`);

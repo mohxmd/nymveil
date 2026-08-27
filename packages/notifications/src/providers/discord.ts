@@ -1,7 +1,9 @@
+import { NotificationHttpError } from "../errors";
 import type {
   DiscordEmbed,
   DiscordEmbedField,
   DiscordPayload,
+  NotificationDeliveryOptions,
   NotificationPayload,
   NotificationResult,
 } from "../types";
@@ -94,7 +96,10 @@ export class DiscordProvider extends BaseProvider {
     this.avatarUrl = config.avatarUrl;
   }
 
-  async send(payload: NotificationPayload): Promise<NotificationResult> {
+  async send(
+    payload: NotificationPayload,
+    options?: NotificationDeliveryOptions,
+  ): Promise<NotificationResult> {
     if (!this.webhookUrl) {
       return {
         success: false,
@@ -106,21 +111,26 @@ export class DiscordProvider extends BaseProvider {
     try {
       const discordPayload = this.buildPayload(payload);
       const response = await this.withRetry(async () => {
-        const res = await this.fetchWithTimeout(this.webhookUrl, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(discordPayload),
-        });
+        const res = await this.fetchWithTimeout(
+          this.webhookUrl,
+          {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(discordPayload),
+          },
+          options?.timeout,
+        );
 
         if (!res.ok) {
           const text = await res.text().catch(() => "Unable to read response");
-          throw new Error(
+          throw new NotificationHttpError(
             `Discord API error: ${res.status} ${res.statusText} - ${text.slice(0, 200)}`,
+            res.status,
           );
         }
 
         return res;
-      });
+      }, options);
 
       return {
         success: true,

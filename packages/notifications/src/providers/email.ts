@@ -1,4 +1,9 @@
-import type { EmailPayload, NotificationPayload, NotificationResult } from "../types";
+import type {
+  EmailPayload,
+  NotificationDeliveryOptions,
+  NotificationPayload,
+  NotificationResult,
+} from "../types";
 import { BaseProvider } from "./base";
 
 const FIRST_CHARACTER_PATTERN = /^./;
@@ -48,7 +53,10 @@ export class EmailProvider extends BaseProvider {
     this.from = config.from;
   }
 
-  async send(payload: NotificationPayload): Promise<NotificationResult> {
+  async send(
+    payload: NotificationPayload,
+    options?: NotificationDeliveryOptions,
+  ): Promise<NotificationResult> {
     if (!this.sendEmailAction) {
       return {
         success: false,
@@ -59,7 +67,7 @@ export class EmailProvider extends BaseProvider {
 
     try {
       const emailPayload = this.buildPayload(payload);
-      await this.withRetry(async () => this.sendEmailAction(emailPayload));
+      await this.withRetry(async () => this.sendEmailAction(emailPayload), options);
 
       return { success: true, channel: "email" };
     } catch (error) {

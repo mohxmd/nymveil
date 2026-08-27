@@ -60,6 +60,34 @@ describe("NotificationClient", () => {
     expect(results).toEqual([{ channel: "email", success: true }]);
   });
 
+  test("applies per-send delivery options", async () => {
+    let attempts = 0;
+    const sendEmailAction = async () => {
+      attempts += 1;
+      if (attempts === 1) {
+        throw new Error("temporary delivery failure");
+      }
+    };
+    const client = new NotificationClient({
+      defaultChannels: ["email"],
+      email: {
+        defaultTo: "recipient@example.com",
+        sendEmailAction,
+      },
+    });
+
+    const results = await client.send(
+      {
+        title: "Delivery status",
+        message: "A notification is ready.",
+      },
+      { retries: 1, retryDelay: 0 },
+    );
+
+    expect(results).toEqual([{ channel: "email", success: true }]);
+    expect(attempts).toBe(2);
+  });
+
   test("snapshots caller-owned channels before awaiting providers", async () => {
     const channels: NotificationChannel[] = ["slack", "email"];
     const client = new NotificationClient();

@@ -8,3 +8,13 @@ export class NoNotificationChannelsError extends Error {
     this.name = "NoNotificationChannelsError";
   }
 }
+
+export class NotificationHttpError extends Error {
+  readonly status: number;
+
+  constructor(message: string, status: number) {
+    super(message);
+    this.name = "NotificationHttpError";
+    this.status = status;
+  }
+}

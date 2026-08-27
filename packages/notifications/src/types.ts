@@ -16,11 +16,14 @@ export interface NotificationResult {
   success: boolean;
 }
 
-export interface NotificationOptions {
-  channels?: NotificationChannel[];
+export interface NotificationDeliveryOptions {
   retries?: number;
   retryDelay?: number;
   timeout?: number;
+}
+
+export interface NotificationOptions extends NotificationDeliveryOptions {
+  channels?: NotificationChannel[];
 }
 
 export interface SlackTextElement {

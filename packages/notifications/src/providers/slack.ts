@@ -1,4 +1,10 @@
-import type { NotificationPayload, NotificationResult, SlackPayload } from "../types";
+import { NotificationHttpError } from "../errors";
+import type {
+  NotificationDeliveryOptions,
+  NotificationPayload,
+  NotificationResult,
+  SlackPayload,
+} from "../types";
 import { BaseProvider } from "./base";
 import { formatMetadataLabel, isUserFacingMetadata, truncate } from "./payload-utils";
 
@@ -94,7 +100,10 @@ export class SlackProvider extends BaseProvider {
     this.iconUrl = config.iconUrl;
   }
 
-  async send(payload: NotificationPayload): Promise<NotificationResult> {
+  async send(
+    payload: NotificationPayload,
+    options?: NotificationDeliveryOptions,
+  ): Promise<NotificationResult> {
     if (!this.webhookUrl) {
       return {
         success: false,
@@ -106,21 +115,26 @@ export class SlackProvider extends BaseProvider {
     try {
       const slackPayload = this.buildPayload(payload);
       const response = await this.withRetry(async () => {
-        const res = await this.fetchWithTimeout(this.webhookUrl, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(slackPayload),
-        });
+        const res = await this.fetchWithTimeout(
+          this.webhookUrl,
+          {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(slackPayload),
+          },
+          options?.timeout,
+        );
 
         if (!res.ok) {
           const text = await res.text().catch(() => "Unable to read response");
-          throw new Error(
+          throw new NotificationHttpError(
             `Slack API error: ${res.status} ${res.statusText} - ${text.slice(0, 200)}`,
+            res.status,
           );
         }
 
         return res;
-      });
+      }, options);
 
       return {
         success: true,

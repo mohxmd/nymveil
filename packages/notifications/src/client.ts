@@ -10,6 +10,7 @@ import { WebhookProvider } from "./providers/webhook";
 import { NoNotificationChannelsError } from "./errors";
 import type {
   NotificationChannel,
+  NotificationDeliveryOptions,
   NotificationOptions,
   NotificationPayload,
   NotificationResult,
@@ -71,6 +72,13 @@ export class NotificationClient {
     const channels = [
       ...new Set(options?.channels !== undefined ? options.channels : this.defaultChannels),
     ];
+    const deliveryOptions: NotificationDeliveryOptions | undefined = options
+      ? {
+          retries: options.retries,
+          retryDelay: options.retryDelay,
+          timeout: options.timeout,
+        }
+      : undefined;
 
     if (channels.length === 0) {
       throw new NoNotificationChannelsError();
@@ -87,7 +95,7 @@ export class NotificationClient {
           } satisfies NotificationResult);
         }
 
-        return provider.send(payload);
+        return provider.send(payload, deliveryOptions);
       }),
     );
 
@@ -114,6 +122,7 @@ export class NotificationClient {
   sendToChannel(
     channel: NotificationChannel,
     payload: NotificationPayload,
+    options?: NotificationDeliveryOptions,
   ): Promise<NotificationResult> {
     const provider = this.providers.get(channel);
     if (!provider) {
@@ -124,7 +133,7 @@ export class NotificationClient {
       });
     }
 
-    return provider.send(payload);
+    return provider.send(payload, options);
   }
 
   hasChannel(channel: NotificationChannel): boolean {
