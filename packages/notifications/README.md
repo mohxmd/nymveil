@@ -40,6 +40,11 @@ await notifications.send(payload, { channels: ["discord"] });
 await notifications.sendToChannel("slack", payload);
 ```
 
+Provider configuration makes a channel available; it does not automatically
+broadcast notifications. Set `defaultChannels` for normal delivery, or pass
+`channels` for an individual notification. If neither is provided, `send()`
+throws `NoNotificationChannelsError`.
+
 ## Email
 
 Email delivery uses an injected function, so the package does not require a

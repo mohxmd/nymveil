@@ -7,6 +7,7 @@ import type { SlackProviderConfig } from "./providers/slack";
 import { SlackProvider } from "./providers/slack";
 import type { WebhookProviderConfig } from "./providers/webhook";
 import { WebhookProvider } from "./providers/webhook";
+import { NoNotificationChannelsError } from "./errors";
 import type {
   NotificationChannel,
   NotificationOptions,
@@ -31,7 +32,6 @@ export class NotificationClient {
 
   constructor(config: NotificationClientConfig = {}) {
     this.providers = new Map();
-    this.defaultChannels = [...(config.defaultChannels ?? [])];
 
     const defaults = {
       timeout: config.defaultTimeout ?? 10_000,
@@ -60,6 +60,8 @@ export class NotificationClient {
     if (config.discord) {
       this.providers.set("discord", new DiscordProvider(withDefaults(config.discord)));
     }
+
+    this.defaultChannels = [...new Set(config.defaultChannels ?? [])];
   }
 
   async send(
@@ -67,13 +69,11 @@ export class NotificationClient {
     options?: NotificationOptions,
   ): Promise<NotificationResult[]> {
     const channels = [
-      ...(options?.channels && options.channels.length > 0
-        ? options.channels
-        : this.defaultChannels),
+      ...new Set(options?.channels !== undefined ? options.channels : this.defaultChannels),
     ];
 
     if (channels.length === 0) {
-      return [];
+      throw new NoNotificationChannelsError();
     }
 
     const results = await Promise.allSettled(
