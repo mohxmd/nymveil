@@ -4,6 +4,7 @@ Nymveil is an open-source, serverless email identity and routing system. It lets
 
 The precise MVP behavior and boundaries are defined in the [MVP product contract](./product-contract.md).
 Security and privacy requirements are defined in the [security and privacy baseline](./security-privacy.md).
+The persistent identity model is defined in the [domain model](./domain-model.md).
 
 ## Product definition
 
