@@ -17,6 +17,20 @@ apps/server ───────> @nymveil/core <────── future CLI 
 
 Dependencies point inward toward the domain. The core package must never import an outer adapter or infrastructure package.
 
+## Database naming conventions
+
+Database object names use lowercase `snake_case` and include the owning table:
+
+```text
+idx_<table>_<columns>
+uidx_<table>_<columns>
+fk_<table>_<column>_<referenced_table>
+chk_<table>_<rule>
+pk_<table>
+```
+
+Examples include `idx_identity_status_expires_at`, `uidx_identity_address`, and `pk_identity_destination`. Column keys remain idiomatic camelCase in TypeScript and are mapped to snake_case database columns by the Drizzle casing configuration. Index and constraint names remain explicit so they are stable and searchable across migrations.
+
 ## `@nymveil/core`
 
 The core owns behavior that describes Nymveil, regardless of where it runs:

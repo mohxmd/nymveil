@@ -10,5 +10,5 @@ export function createDb() {
     authToken: env.DATABASE_AUTH_TOKEN,
   });
 
-  return drizzle({ client, schema });
+  return drizzle({ client, schema, casing: "snake_case" });
 }
