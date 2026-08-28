@@ -1,0 +1,7 @@
+{
+  "name": "@nymveil/core",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Framework-independent domain rules and use cases for Nymveil.",
+  "type": "module"
+}
