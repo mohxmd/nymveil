@@ -12,13 +12,17 @@ const now = new Date("2026-08-30T12:00:00.000Z");
 
 async function createTestContext() {
   const client = createClient({ url: "file::memory:" });
-  const migration = await Bun.file(
-    new URL("../src/migrations/0000_identity_model.sql", import.meta.url),
-  ).text();
+  for (const file of [
+    "0000_identity_model.sql",
+    "0001_cloudy_molecule_man.sql",
+    "0002_orange_deathbird.sql",
+  ]) {
+    const migration = await Bun.file(new URL(`../src/migrations/${file}`, import.meta.url)).text();
 
-  for (const statement of migration.split("--> statement-breakpoint")) {
-    if (statement.trim()) {
-      await client.execute(statement);
+    for (const statement of migration.split("--> statement-breakpoint")) {
+      if (statement.trim()) {
+        await client.execute(statement);
+      }
     }
   }
 

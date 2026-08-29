@@ -110,18 +110,18 @@ A destination is a user-owned delivery target, such as Discord or Telegram.
 
 ### Fields
 
-| Field       | Meaning                                                  |
-| ----------- | -------------------------------------------------------- |
-| `id`        | Opaque immutable destination id                          |
-| `userId`    | Owning Better Auth user id                               |
-| `provider`  | Stable provider key, for example `discord` or `telegram` |
-| `label`     | User-facing destination name                             |
-| `configRef` | Reference to protected provider configuration            |
-| `enabled`   | Whether the destination may receive delivery             |
-| `createdAt` | Creation time                                            |
-| `updatedAt` | Last mutation time                                       |
+| Field       | Meaning                                                                  |
+| ----------- | ------------------------------------------------------------------------ |
+| `id`        | Opaque immutable destination id                                          |
+| `userId`    | Owning Better Auth user id                                               |
+| `provider`  | Stable provider key: `dashboard`, `discord`, `telegram`, or a future key |
+| `label`     | User-facing destination name                                             |
+| `targetRef` | Provider account or target id; never a provider secret                   |
+| `enabled`   | Whether the destination may receive delivery                             |
+| `createdAt` | Creation time                                                            |
+| `updatedAt` | Last mutation time                                                       |
 
-Provider-specific credential values must not be stored as ordinary plaintext columns. The exact protected configuration mechanism is an implementation and deployment concern.
+The dashboard destination has no external target and therefore uses `targetRef = NULL`. Provider-specific credential values must not be stored as ordinary plaintext columns. The exact protected configuration mechanism is an implementation and deployment concern.
 
 Destinations are independently enableable. A configured destination is not automatically selected for every identity.
 
@@ -136,7 +136,6 @@ An identity may deliver to multiple destinations, and a destination may serve mu
 | `identityId`    | Referenced identity         |
 | `destinationId` | Referenced destination      |
 | `createdAt`     | Time the route was selected |
-| `updatedAt`     | Last route mutation time    |
 
 The pair `(identityId, destinationId)` is the primary key or an equivalent unique constraint. Both foreign keys must cascade when their parent relationship is deleted, subject to the identity tombstone policy.
 
@@ -167,6 +166,29 @@ An inbound message may route only when all of these conditions are true:
 6. The destination is enabled and selected for the identity.
 
 The server evaluates these conditions using trusted state and server time. A client cannot override status, ownership, expiration, or destination eligibility.
+
+## Delivery attempts
+
+A delivery attempt is the metadata record for one inbound event and one selected destination. It contains no message body, headers, attachments, provider response, or secret.
+
+### Fields
+
+| Field           | Meaning                                               |
+| --------------- | ----------------------------------------------------- |
+| `id`            | Opaque immutable delivery-attempt id                  |
+| `deliveryKey`   | Stable event-and-destination key used for idempotency |
+| `userId`        | Owning Better Auth user id                            |
+| `identityId`    | Identity that received the inbound event              |
+| `destinationId` | Selected destination                                  |
+| `provider`      | Provider key used for the attempt                     |
+| `status`        | `pending`, `succeeded`, or `failed`                   |
+| `attemptedAt`   | Time delivery processing began                        |
+| `completedAt`   | Time the attempt reached a terminal state, nullable   |
+| `errorCode`     | Bounded provider-neutral failure category, nullable   |
+| `createdAt`     | Record creation time                                  |
+| `updatedAt`     | Last metadata mutation time                           |
+
+The `deliveryKey` is unique. A repeated inbound event for the same destination must not create a second successful delivery or send the notification again. Explicit retry processing may update the existing failed record and preserve its original key.
 
 ## Future extensions
 

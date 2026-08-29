@@ -16,4 +16,5 @@ export { createDbFromClient } from "./client";
 export type { Database } from "./client";
 
 export { createDomainRepository } from "./repositories/domain-repository";
+export { createDeliveryAttemptRepository } from "./repositories/delivery-attempt-repository";
 export { createIdentityRepository } from "./repositories/identity-repository";
