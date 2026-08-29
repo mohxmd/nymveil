@@ -6,14 +6,22 @@ import type { AuthInstance } from "./http/types";
 import { apiErrorHandler, apiNotFoundHandler } from "./http/errors";
 import { requireSession } from "./http/auth-middleware";
 import { serverFactory } from "./http/types";
+import { createIdentityRoutes } from "./modules/identities";
+import type { IdentityUseCases } from "@nymveil/core";
 
 export interface AppDependencies {
   auth: AuthInstance;
   corsOrigin: string;
   enableAuthLogging?: boolean;
+  createIdentityUseCases?: () => IdentityUseCases;
 }
 
-export function createApp({ auth, corsOrigin, enableAuthLogging = true }: AppDependencies) {
+export function createApp({
+  auth,
+  corsOrigin,
+  enableAuthLogging = true,
+  createIdentityUseCases,
+}: AppDependencies) {
   const app = serverFactory.createApp();
 
   app.use(evlog());
@@ -41,6 +49,10 @@ export function createApp({ auth, corsOrigin, enableAuthLogging = true }: AppDep
   );
 
   app.all("/api/auth/*", (c) => auth.handler(c.req.raw));
+
+  if (createIdentityUseCases) {
+    app.route("/api/identities", createIdentityRoutes({ auth, createIdentityUseCases }));
+  }
 
   app.get("/api/me", requireSession(auth), (c) => {
     return c.json({ user: c.var.user });
