@@ -110,18 +110,18 @@ A destination is a user-owned delivery target, such as Discord or Telegram.
 
 ### Fields
 
-| Field       | Meaning                                                  |
-| ----------- | -------------------------------------------------------- |
-| `id`        | Opaque immutable destination id                          |
-| `userId`    | Owning Better Auth user id                               |
-| `provider`  | Stable provider key, for example `discord` or `telegram` |
-| `label`     | User-facing destination name                             |
-| `configRef` | Reference to protected provider configuration            |
-| `enabled`   | Whether the destination may receive delivery             |
-| `createdAt` | Creation time                                            |
-| `updatedAt` | Last mutation time                                       |
+| Field       | Meaning                                                                  |
+| ----------- | ------------------------------------------------------------------------ |
+| `id`        | Opaque immutable destination id                                          |
+| `userId`    | Owning Better Auth user id                                               |
+| `provider`  | Stable provider key: `dashboard`, `discord`, `telegram`, or a future key |
+| `label`     | User-facing destination name                                             |
+| `targetRef` | Provider account or target id; never a provider secret                   |
+| `enabled`   | Whether the destination may receive delivery                             |
+| `createdAt` | Creation time                                                            |
+| `updatedAt` | Last mutation time                                                       |
 
-Provider-specific credential values must not be stored as ordinary plaintext columns. The exact protected configuration mechanism is an implementation and deployment concern.
+The dashboard destination has no external target and therefore uses `targetRef = NULL`. Provider-specific credential values must not be stored as ordinary plaintext columns. The exact protected configuration mechanism is an implementation and deployment concern.
 
 Destinations are independently enableable. A configured destination is not automatically selected for every identity.
 
@@ -136,7 +136,6 @@ An identity may deliver to multiple destinations, and a destination may serve mu
 | `identityId`    | Referenced identity         |
 | `destinationId` | Referenced destination      |
 | `createdAt`     | Time the route was selected |
-| `updatedAt`     | Last route mutation time    |
 
 The pair `(identityId, destinationId)` is the primary key or an equivalent unique constraint. Both foreign keys must cascade when their parent relationship is deleted, subject to the identity tombstone policy.
 

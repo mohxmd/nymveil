@@ -93,7 +93,7 @@ An identity may select multiple destinations. Only destinations selected for tha
 
 Configured destinations must not receive every identity's messages automatically. This allows a user to route one identity to Discord, another to Telegram, and another to a future provider.
 
-For each inbound message, Nymveil attempts delivery to all eligible selected destinations according to the delivery policy. A failure at one destination must not prevent independent destinations from being attempted.
+For each inbound message, Nymveil attempts delivery to all eligible selected destinations according to the delivery policy. A destination is eligible only when it is explicitly selected, enabled, owned by the identity's user, and the identity is routable. A failure at one destination must not prevent independent destinations from being attempted. Configured destinations are never broadcast implicitly.
 
 The MVP supports Discord and Telegram delivery. Provider credentials are deployment secrets or protected configuration and must never be exposed through ordinary API responses.
 
