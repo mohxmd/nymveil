@@ -97,6 +97,8 @@ For each inbound message, Nymveil attempts delivery to all eligible selected des
 
 The MVP supports Discord and Telegram delivery. Provider credentials are deployment secrets or protected configuration and must never be exposed through ordinary API responses.
 
+Each inbound event and selected destination produces at most one logical delivery record identified by a stable delivery key. Duplicate inbound events do not produce duplicate successful notifications. Failed deliveries may be retried explicitly by later delivery orchestration while retaining the same metadata record.
+
 ## Inbound message behavior
 
 For every inbound message, the server:

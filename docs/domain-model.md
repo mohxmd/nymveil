@@ -167,6 +167,29 @@ An inbound message may route only when all of these conditions are true:
 
 The server evaluates these conditions using trusted state and server time. A client cannot override status, ownership, expiration, or destination eligibility.
 
+## Delivery attempts
+
+A delivery attempt is the metadata record for one inbound event and one selected destination. It contains no message body, headers, attachments, provider response, or secret.
+
+### Fields
+
+| Field           | Meaning                                               |
+| --------------- | ----------------------------------------------------- |
+| `id`            | Opaque immutable delivery-attempt id                  |
+| `deliveryKey`   | Stable event-and-destination key used for idempotency |
+| `userId`        | Owning Better Auth user id                            |
+| `identityId`    | Identity that received the inbound event              |
+| `destinationId` | Selected destination                                  |
+| `provider`      | Provider key used for the attempt                     |
+| `status`        | `pending`, `succeeded`, or `failed`                   |
+| `attemptedAt`   | Time delivery processing began                        |
+| `completedAt`   | Time the attempt reached a terminal state, nullable   |
+| `errorCode`     | Bounded provider-neutral failure category, nullable   |
+| `createdAt`     | Record creation time                                  |
+| `updatedAt`     | Last metadata mutation time                           |
+
+The `deliveryKey` is unique. A repeated inbound event for the same destination must not create a second successful delivery or send the notification again. Explicit retry processing may update the existing failed record and preserve its original key.
+
 ## Future extensions
 
 The model intentionally leaves room for:
