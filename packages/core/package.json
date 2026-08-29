@@ -3,5 +3,17 @@
   "version": "0.0.0",
   "private": true,
   "description": "Framework-independent domain rules and use cases for Nymveil.",
-  "type": "module"
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "check-types": "tsc --noEmit",
+    "test": "bun test tests/*.test.ts"
+  },
+  "devDependencies": {
+    "@nymveil/config": "workspace:*",
+    "@types/node": "catalog:",
+    "typescript": "catalog:"
+  }
 }

@@ -21,7 +21,9 @@
     "apps/server": {
       "name": "server",
       "dependencies": {
+        "@hono/zod-validator": "^0.9.0",
         "@nymveil/auth": "workspace:*",
+        "@nymveil/core": "workspace:*",
         "@nymveil/db": "workspace:*",
         "@nymveil/env": "workspace:*",
         "better-auth": "catalog:",
@@ -34,6 +36,7 @@
       "devDependencies": {
         "@cloudflare/workers-types": "catalog:",
         "@nymveil/config": "workspace:*",
+        "@types/bun": "^1.4.0",
         "@types/node": "catalog:",
         "tsdown": "^0.22.14",
         "typescript": "catalog:",
@@ -107,10 +110,20 @@
       "name": "@nymveil/config",
       "version": "0.0.0",
     },
+    "packages/core": {
+      "name": "@nymveil/core",
+      "version": "0.0.0",
+      "devDependencies": {
+        "@nymveil/config": "workspace:*",
+        "@types/node": "catalog:",
+        "typescript": "catalog:",
+      },
+    },
     "packages/db": {
       "name": "@nymveil/db",
       "dependencies": {
         "@libsql/client": "0.17.4",
+        "@nymveil/core": "workspace:*",
         "@nymveil/env": "workspace:*",
         "dotenv": "catalog:",
         "drizzle-orm": "^0.45.2",
@@ -119,6 +132,7 @@
       },
       "devDependencies": {
         "@nymveil/config": "workspace:*",
+        "@types/bun": "^1.4.0",
         "drizzle-kit": "^0.31.10",
         "typescript": "catalog:",
       },
@@ -394,6 +408,8 @@
 
     "@hono/node-server": ["@hono/node-server@1.19.9", "", { "peerDependencies": { "hono": "^4" } }, "sha512-vHL6w3ecZsky+8P5MD+eFfaGTyCeOHUIFYMGpQGbrBTSmNNoxv0if69rEZ5giu36weC5saFuznL411gRX7bJDw=="],
 
+    "@hono/zod-validator": ["@hono/zod-validator@0.9.0", "", { "peerDependencies": { "hono": ">=4.11.2", "zod": "^3.25.0 || ^4.0.0" } }, "sha512-n0ZSXmCiHVIp4Y5wlOOyZCeTd/rsawA/qW1cipB8QOYKZ9N8Tk0nZUZCXho9cu374AN4JpDNKioNKBJ/W+LBug=="],
+
     "@img/colour": ["@img/colour@1.1.0", "", {}, "sha512-Td76q7j57o/tLVdgS746cYARfSyxk8iEfRxewL9h4OMzYhbW4TAcppl0mT4eyqXddh6L/jwoM75mo7ixa/pCeQ=="],
 
     "@img/sharp-darwin-arm64": ["@img/sharp-darwin-arm64@0.34.5", "", { "optionalDependencies": { "@img/sharp-libvips-darwin-arm64": "1.2.4" }, "os": "darwin", "cpu": "arm64" }, "sha512-imtQ3WMJXbMY4fxb/Ndp6HBTNVtWCUI0WdobyheGf5+ad6xX8VIDO8u2xE4qc/fr08CKG/7dDseFtn6M6g/r3w=="],
@@ -531,6 +547,8 @@
     "@nymveil/auth": ["@nymveil/auth@workspace:packages/auth"],
 
     "@nymveil/config": ["@nymveil/config@workspace:packages/config"],
+
+    "@nymveil/core": ["@nymveil/core@workspace:packages/core"],
 
     "@nymveil/db": ["@nymveil/db@workspace:packages/db"],
 

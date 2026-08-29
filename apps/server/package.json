@@ -5,10 +5,13 @@
   "scripts": {
     "build": "tsdown",
     "check-types": "tsc -b",
+    "test": "bun test tests/*.test.ts",
     "compile": "bun build --compile --minify --sourcemap --bytecode ./src/index.ts --outfile server"
   },
   "dependencies": {
+    "@hono/zod-validator": "^0.9.0",
     "@nymveil/auth": "workspace:*",
+    "@nymveil/core": "workspace:*",
     "@nymveil/db": "workspace:*",
     "@nymveil/env": "workspace:*",
     "better-auth": "catalog:",
@@ -21,6 +24,7 @@
   "devDependencies": {
     "@cloudflare/workers-types": "catalog:",
     "@nymveil/config": "workspace:*",
+    "@types/bun": "^1.4.0",
     "@types/node": "catalog:",
     "tsdown": "^0.22.14",
     "typescript": "catalog:"

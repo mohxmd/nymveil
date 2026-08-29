@@ -1,41 +1,24 @@
+import { IdentityUseCases } from "@nymveil/core";
 import { createAuth } from "@nymveil/auth";
+import { createDb, createDomainRepository, createIdentityRepository } from "@nymveil/db";
 import { env } from "@nymveil/env/server";
 import { initLogger } from "evlog";
-import { createAuthMiddleware, type BetterAuthInstance } from "evlog/better-auth";
-import { evlog, type EvlogVariables } from "evlog/hono";
-import { Hono } from "hono";
-import { cors } from "hono/cors";
 
-initLogger({
-  env: { service: "nymveil-server" },
-});
+import { createApp } from "./app";
 
-const app = new Hono<EvlogVariables>();
+initLogger({ env: { service: "nymveil-server" } });
 
-app.use(evlog());
-app.use("*", async (c, next) => {
-  const identifyUser = createAuthMiddleware(createAuth() as BetterAuthInstance, {
-    exclude: ["/api/auth/**"],
-    maskEmail: true,
-  });
-  await identifyUser(c.get("log"), c.req.raw.headers, c.req.path);
-  await next();
-});
+const app = createApp({
+  auth: createAuth(),
+  corsOrigin: env.CORS_ORIGIN,
+  createIdentityUseCases: () => {
+    const db = createDb();
 
-app.use(
-  "/*",
-  cors({
-    origin: env.CORS_ORIGIN,
-    allowMethods: ["GET", "POST", "OPTIONS"],
-    allowHeaders: ["Content-Type", "Authorization"],
-    credentials: true,
-  }),
-);
-
-app.on(["POST", "GET"], "/api/auth/*", (c) => createAuth().handler(c.req.raw));
-
-app.get("/", (c) => {
-  return c.text("OK");
+    return new IdentityUseCases({
+      domainRepository: createDomainRepository(db),
+      identityRepository: createIdentityRepository(db),
+    });
+  },
 });
 
 export default app;
