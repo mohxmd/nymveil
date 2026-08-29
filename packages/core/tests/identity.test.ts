@@ -32,6 +32,10 @@ class InMemoryIdentityRepository implements IdentityRepository {
     return [...this.identities.values()].find((identity) => identity.address === address) ?? null;
   }
 
+  async listByUserId(userId: string): Promise<IdentityRecord[]> {
+    return [...this.identities.values()].filter((identity) => identity.userId === userId);
+  }
+
   async create(identity: IdentityRecord): Promise<IdentityRecord> {
     this.identities.set(identity.id, identity);
     return identity;
@@ -176,6 +180,24 @@ describe("IdentityUseCases", () => {
 
     expect(resolved.status).toBe("expired");
     expect(repository.identities.get(identity.id)?.status).toBe("expired");
+  });
+
+  test("lists owned identities and updates active identity metadata", async () => {
+    const { useCases } = createUseCases();
+    const identity = await useCases.createIdentity({
+      userId: "user-1",
+      domainId: "domain-1",
+      label: "GitHub",
+    });
+
+    const updated = await useCases.updateIdentity("user-1", identity.id, {
+      label: "GitHub account",
+      expiresAt: new Date("2026-09-01T12:00:00.000Z"),
+    });
+
+    expect(updated.label).toBe("GitHub account");
+    expect(updated.expiresAt).toEqual(new Date("2026-09-01T12:00:00.000Z"));
+    expect(await useCases.listIdentities("user-1")).toEqual([updated]);
   });
 
   test("allows torch from active or expired and rejects torch after torch", async () => {

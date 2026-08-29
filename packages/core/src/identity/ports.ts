@@ -1,12 +1,13 @@
-import type { IdentityRecord } from "./types";
+import type { DomainRecord, IdentityRecord } from "./types";
 
 export interface DomainRepository {
-  findById(id: string): Promise<import("./types").DomainRecord | null>;
+  findById(id: string): Promise<DomainRecord | null>;
 }
 
 export interface IdentityRepository {
   findById(id: string): Promise<IdentityRecord | null>;
   findByAddress(address: string): Promise<IdentityRecord | null>;
+  listByUserId(userId: string): Promise<IdentityRecord[]>;
   create(identity: IdentityRecord): Promise<IdentityRecord>;
   update(identity: IdentityRecord): Promise<IdentityRecord>;
 }

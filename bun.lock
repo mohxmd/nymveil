@@ -107,10 +107,20 @@
       "name": "@nymveil/config",
       "version": "0.0.0",
     },
+    "packages/core": {
+      "name": "@nymveil/core",
+      "version": "0.0.0",
+      "devDependencies": {
+        "@nymveil/config": "workspace:*",
+        "@types/node": "catalog:",
+        "typescript": "catalog:",
+      },
+    },
     "packages/db": {
       "name": "@nymveil/db",
       "dependencies": {
         "@libsql/client": "0.17.4",
+        "@nymveil/core": "workspace:*",
         "@nymveil/env": "workspace:*",
         "dotenv": "catalog:",
         "drizzle-orm": "^0.45.2",
@@ -119,6 +129,7 @@
       },
       "devDependencies": {
         "@nymveil/config": "workspace:*",
+        "@types/bun": "^1.4.0",
         "drizzle-kit": "^0.31.10",
         "typescript": "catalog:",
       },
@@ -531,6 +542,8 @@
     "@nymveil/auth": ["@nymveil/auth@workspace:packages/auth"],
 
     "@nymveil/config": ["@nymveil/config@workspace:packages/config"],
+
+    "@nymveil/core": ["@nymveil/core@workspace:packages/core"],
 
     "@nymveil/db": ["@nymveil/db@workspace:packages/db"],
 

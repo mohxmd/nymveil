@@ -29,3 +29,8 @@ export interface CreateIdentityInput {
   label: string;
   expiresAt?: Date | null;
 }
+
+export interface UpdateIdentityInput {
+  label?: string;
+  expiresAt?: Date | null;
+}

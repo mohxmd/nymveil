@@ -1,8 +1,7 @@
 import { createClient } from "@libsql/client";
 import { env } from "@nymveil/env/server";
-import { drizzle } from "drizzle-orm/libsql";
 
-import * as schema from "./schema";
+import { createDbFromClient } from "./client";
 
 export function createDb() {
   const client = createClient({
@@ -10,5 +9,11 @@ export function createDb() {
     authToken: env.DATABASE_AUTH_TOKEN,
   });
 
-  return drizzle({ client, schema, casing: "snake_case" });
+  return createDbFromClient(client);
 }
+
+export { createDbFromClient } from "./client";
+export type { Database } from "./client";
+
+export { createDomainRepository } from "./repositories/domain-repository";
+export { createIdentityRepository } from "./repositories/identity-repository";

@@ -15,7 +15,7 @@ import {
   normalizeLocalPart,
   normalizeRequiredId,
 } from "./rules";
-import type { CreateIdentityInput, IdentityRecord } from "./types";
+import type { CreateIdentityInput, IdentityRecord, UpdateIdentityInput } from "./types";
 
 const MAX_ADDRESS_ALLOCATION_ATTEMPTS = 5;
 
@@ -131,6 +131,46 @@ export class IdentityUseCases {
   async getIdentity(userId: string, identityId: string): Promise<IdentityRecord> {
     const identity = await this.getOwnedIdentity(userId, identityId);
     return this.materializeExpiration(identity);
+  }
+
+  async listIdentities(userId: string): Promise<IdentityRecord[]> {
+    const ownerId = normalizeRequiredId(userId, "userId");
+    const identities = await this.dependencies.identityRepository.listByUserId(ownerId);
+
+    return Promise.all(identities.map((identity) => this.materializeExpiration(identity)));
+  }
+
+  async updateIdentity(
+    userId: string,
+    identityId: string,
+    input: UpdateIdentityInput,
+  ): Promise<IdentityRecord> {
+    const identity = await this.materializeExpiration(
+      await this.getOwnedIdentity(userId, identityId),
+    );
+
+    if (identity.status !== "active") {
+      throw new IdentityDomainError(
+        "invalid_lifecycle_transition",
+        "Only an active identity can be updated.",
+      );
+    }
+
+    if (input.label === undefined && input.expiresAt === undefined) {
+      throw new IdentityDomainError("invalid_input", "At least one identity field is required.");
+    }
+
+    const now = this.clock.now();
+
+    return this.dependencies.identityRepository.update({
+      ...identity,
+      label: input.label === undefined ? identity.label : normalizeLabel(input.label),
+      expiresAt:
+        input.expiresAt === undefined
+          ? identity.expiresAt
+          : normalizeExpiration(input.expiresAt, now),
+      updatedAt: now,
+    });
   }
 
   async expireIdentity(userId: string, identityId: string): Promise<IdentityRecord> {
