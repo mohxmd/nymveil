@@ -1,1 +1,6 @@
-export type { InboundEmail, InboundEmailProcessor } from "./types";
+export type {
+  InboundEmail,
+  InboundEmailAttachment,
+  InboundEmailProcessor,
+  ParsedInboundEmail,
+} from "./types";
