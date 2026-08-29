@@ -9,3 +9,4 @@ export * from "./identity/ports";
 export * from "./identity/rules";
 export * from "./identity/types";
 export * from "./identity/use-cases";
+export * from "./inbound";
