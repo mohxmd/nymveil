@@ -9,7 +9,7 @@
   },
   "scripts": {
     "check-types": "tsc --noEmit",
-    "test": "bun test tests"
+    "test": "bun test tests/*.test.ts"
   },
   "devDependencies": {
     "@nymveil/config": "workspace:*",
