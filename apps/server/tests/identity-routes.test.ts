@@ -2,7 +2,7 @@ import { describe, expect, test } from "bun:test";
 import { IdentityDomainError, type IdentityRecord, type IdentityUseCases } from "@nymveil/core";
 
 import { createApp } from "../src/app";
-import type { AuthInstance } from "../src/http/types";
+import type { AuthInstance, AuthSession } from "../src/http/types";
 
 const identity: IdentityRecord = {
   id: "identity-1",
@@ -18,29 +18,38 @@ const identity: IdentityRecord = {
   updatedAt: new Date("2026-08-30T12:00:00.000Z"),
 };
 
-const session = {
+const authenticatedSession: AuthSession = {
   session: {
     id: "session-1",
     userId: "user-1",
     expiresAt: new Date("2026-09-01T12:00:00.000Z"),
+    createdAt: new Date("2026-08-30T12:00:00.000Z"),
+    updatedAt: new Date("2026-08-30T12:00:00.000Z"),
+    token: "session-token",
   },
   user: {
     id: "user-1",
     name: "Test User",
     email: "test@example.com",
+    emailVerified: true,
+    createdAt: new Date("2026-08-30T12:00:00.000Z"),
+    updatedAt: new Date("2026-08-30T12:00:00.000Z"),
   },
 };
 
-function createAuthMock(): AuthInstance {
+function createAuthMock(authSession: AuthSession | null = authenticatedSession): AuthInstance {
   return {
     api: {
-      getSession: async () => session,
+      getSession: async () => authSession,
     },
     handler: async () => new Response(JSON.stringify({ status: "ok" })),
   } as unknown as AuthInstance;
 }
 
-function createTestApp(overrides: Partial<IdentityUseCases> = {}) {
+function createTestApp(
+  overrides: Partial<IdentityUseCases> = {},
+  authSession: AuthSession | null = authenticatedSession,
+) {
   const calls = {
     create: [] as unknown[],
     list: [] as string[],
@@ -75,7 +84,7 @@ function createTestApp(overrides: Partial<IdentityUseCases> = {}) {
   return {
     calls,
     app: createApp({
-      auth: createAuthMock(),
+      auth: createAuthMock(authSession),
       corsOrigin: "http://localhost:5173",
       createIdentityUseCases: () => useCases,
       enableAuthLogging: false,
@@ -84,6 +93,20 @@ function createTestApp(overrides: Partial<IdentityUseCases> = {}) {
 }
 
 describe("identity routes", () => {
+  test("rejects unauthenticated requests", async () => {
+    const { app } = createTestApp({}, null);
+
+    const response = await app.request("/api/identities");
+
+    expect(response.status).toBe(401);
+    expect((await response.json()) as unknown).toEqual({
+      error: {
+        code: "unauthenticated",
+        message: "Authentication is required.",
+      },
+    });
+  });
+
   test("creates an identity with the authenticated owner", async () => {
     const { app, calls } = createTestApp();
     const response = await app.request("/api/identities", {
@@ -163,6 +186,53 @@ describe("identity routes", () => {
       error: {
         code: "not_found",
         message: "The requested resource was not found.",
+      },
+    });
+  });
+
+  test("returns expired identities with their lifecycle state", async () => {
+    const expiredIdentity: IdentityRecord = {
+      ...identity,
+      status: "expired",
+      expiresAt: new Date("2026-08-29T12:00:00.000Z"),
+      updatedAt: new Date("2026-08-30T12:00:00.000Z"),
+    };
+    const { app } = createTestApp({
+      getIdentity: async () => expiredIdentity,
+    });
+
+    const response = await app.request("/api/identities/identity-1");
+
+    expect(response.status).toBe(200);
+    expect((await response.json()) as unknown).toMatchObject({
+      identity: {
+        status: "expired",
+        expiresAt: "2026-08-29T12:00:00.000Z",
+      },
+    });
+  });
+
+  test("maps duplicate identity addresses to a conflict response", async () => {
+    const { app } = createTestApp({
+      createIdentity: async () => {
+        throw new IdentityDomainError(
+          "identity_address_conflict",
+          "The generated identity address is already in use.",
+        );
+      },
+    });
+
+    const response = await app.request("/api/identities", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ domainId: "domain-1", label: "GitHub" }),
+    });
+
+    expect(response.status).toBe(409);
+    expect((await response.json()) as unknown).toEqual({
+      error: {
+        code: "conflict",
+        message: "The identity address could not be allocated.",
       },
     });
   });
