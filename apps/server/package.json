@@ -14,6 +14,7 @@
     "@nymveil/core": "workspace:*",
     "@nymveil/db": "workspace:*",
     "@nymveil/env": "workspace:*",
+    "@nymveil/notifications": "workspace:*",
     "better-auth": "catalog:",
     "dotenv": "catalog:",
     "evlog": "^2.22.4",
