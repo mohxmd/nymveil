@@ -1,3 +1,4 @@
+export * from "./routing";
 export type {
   InboundEmail,
   InboundEmailAttachment,
