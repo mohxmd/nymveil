@@ -10,6 +10,7 @@ export type ApiErrorCode =
   | "bad_request"
   | "not_found"
   | "conflict"
+  | "rate_limited"
   | "internal_error";
 
 export interface ApiErrorBody {
@@ -36,6 +37,10 @@ export function apiErrorResponse(
   status: ContentfulStatusCode,
   message: string,
 ) {
+  if (status === 429) {
+    c.header("Retry-After", "60");
+  }
+
   return c.json<ApiErrorBody>({ error: { code, message } }, status);
 }
 

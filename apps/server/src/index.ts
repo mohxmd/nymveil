@@ -25,9 +25,15 @@ initLogger({ env: { service: "nymveil-server" } });
 
 const db = createDb();
 
+if (!env.API_RATE_LIMITER || !env.IDENTITY_CREATION_RATE_LIMITER) {
+  throw new Error("Production rate-limit bindings are required.");
+}
+
 const app = createApp({
   auth: createAuth(),
   corsOrigin: env.CORS_ORIGIN,
+  apiRateLimiter: env.API_RATE_LIMITER,
+  identityCreationRateLimiter: env.IDENTITY_CREATION_RATE_LIMITER,
   createDomainRepository: () => createDomainRepository(db),
   createIdentityUseCases: () => {
     return new IdentityUseCases({

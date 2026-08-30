@@ -28,8 +28,7 @@ export function createAuth() {
     baseURL: env.BETTER_AUTH_URL,
     advanced: {
       defaultCookieAttributes: {
-        sameSite: "none",
-        secure: true,
+        sameSite: "lax",
         httpOnly: true,
       },
       // uncomment crossSubDomainCookies setting when ready to deploy and replace <your-workers-subdomain> with your actual workers subdomain
