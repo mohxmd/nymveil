@@ -4,6 +4,8 @@
   import { Alert, AlertDescription, AlertTitle } from "$lib/components/ui/alert";
   import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "$lib/components/ui/card";
   import DeliveryAttemptList from "$lib/features/delivery/components/delivery-attempt-list.svelte";
+  import DomainSetup from "$lib/features/domains/components/domain-setup.svelte";
+  import type { DomainFormState } from "$lib/features/domains/types";
   import DestinationOverview from "$lib/features/identities/components/destination-overview.svelte";
   import CreateIdentityForm from "$lib/features/identities/components/create-identity-form.svelte";
   import IdentityCard from "$lib/features/identities/components/identity-card.svelte";
@@ -32,6 +34,8 @@
     destinations={data.destinations}
     form={form as IdentityFormState | null | undefined}
   />
+
+  <DomainSetup domains={data.domains} form={form as DomainFormState | null | undefined} />
 
   <section class="grid gap-6 lg:grid-cols-[minmax(0,22rem)_1fr] lg:items-start">
     <CreateIdentityForm domains={data.domains} form={form as IdentityFormState | null | undefined} />

@@ -5,8 +5,8 @@ import { secureHeaders } from "hono/secure-headers";
 
 import type {
   DeliveryMetadataUseCases,
+  DomainUseCases,
   DestinationUseCases,
-  DomainRepository,
   IdentityUseCases,
 } from "@nymveil/core";
 
@@ -28,7 +28,7 @@ export interface AppDependencies {
   identityCreationRateLimiter?: RateLimiter;
   enableAuthLogging?: boolean;
   createIdentityUseCases?: () => IdentityUseCases;
-  createDomainRepository?: () => DomainRepository;
+  createDomainUseCases?: () => DomainUseCases;
   createDestinationUseCases?: () => DestinationUseCases;
   destinationCredentials?: DestinationCredentialStore;
   createDeliveryMetadataUseCases?: () => DeliveryMetadataUseCases;
@@ -41,7 +41,7 @@ export function createApp({
   identityCreationRateLimiter,
   enableAuthLogging = true,
   createIdentityUseCases,
-  createDomainRepository,
+  createDomainUseCases,
   createDestinationUseCases,
   destinationCredentials,
   createDeliveryMetadataUseCases,
@@ -87,11 +87,8 @@ export function createApp({
     );
   }
 
-  if (createDomainRepository) {
-    app.route(
-      "/api/domains",
-      createDomainRoutes({ auth, domainRepository: createDomainRepository() }),
-    );
+  if (createDomainUseCases) {
+    app.route("/api/domains", createDomainRoutes({ auth, createDomainUseCases }));
   }
 
   if (createDestinationUseCases) {

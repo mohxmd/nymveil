@@ -1,5 +1,6 @@
 import {
   DeliveryMetadataUseCases,
+  DomainUseCases,
   DestinationUseCases,
   ExpirationCleanup,
   InboundRoutingUseCases,
@@ -28,6 +29,11 @@ import { createInboundEmailHandler } from "./email/composition";
 import { createDestinationCredentialStore } from "./delivery/destination-credentials";
 import { createDestinationNotificationResolver } from "./delivery/destination-notification-resolver";
 import { asScheduledCleanupJob, createScheduledCleanupHandler } from "./maintenance/cleanup";
+import {
+  createCloudflareDomainVerifier,
+  createDomainChallengeHasher,
+  domainTokenGenerator,
+} from "./modules/domains/verification";
 
 initLogger({ env: { service: "nymveil-server" } });
 
@@ -46,7 +52,13 @@ const app = createApp({
   corsOrigin: env.CORS_ORIGIN,
   apiRateLimiter: env.API_RATE_LIMITER,
   identityCreationRateLimiter: env.IDENTITY_CREATION_RATE_LIMITER,
-  createDomainRepository: () => createDomainRepository(db),
+  createDomainUseCases: () =>
+    new DomainUseCases({
+      domainRepository: createDomainRepository(db),
+      challengeHasher: createDomainChallengeHasher(),
+      tokenGenerator: domainTokenGenerator,
+      verifier: createCloudflareDomainVerifier(),
+    }),
   createIdentityUseCases: () => {
     return new IdentityUseCases({
       domainRepository: createDomainRepository(db),

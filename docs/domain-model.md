@@ -1,6 +1,6 @@
 # Nymveil Domain and Identity Model
 
-This document defines the persistent domain model for the MVP. Ticket 05 will translate this design into Drizzle SQLite tables and migrations.
+This document defines the persistent domain model for the MVP.
 
 ## Design principles
 
@@ -23,16 +23,16 @@ A domain is a custom email namespace that a user is allowed to use for identitie
 
 ### Fields
 
-| Field               | Meaning                                                                           |
-| ------------------- | --------------------------------------------------------------------------------- |
-| `id`                | Opaque immutable domain id                                                        |
-| `userId`            | Owning Better Auth user id                                                        |
-| `hostname`          | Normalized lowercase domain name                                                  |
-| `status`            | Domain verification lifecycle state                                               |
-| `verificationToken` | Protected verification material or reference, never exposed in ordinary responses |
-| `verifiedAt`        | Time verification completed, nullable                                             |
-| `createdAt`         | Creation time                                                                     |
-| `updatedAt`         | Last mutation time                                                                |
+| Field                   | Meaning                                                                        |
+| ----------------------- | ------------------------------------------------------------------------------ |
+| `id`                    | Opaque immutable domain id                                                     |
+| `userId`                | Owning Better Auth user id                                                     |
+| `hostname`              | Normalized lowercase domain name                                               |
+| `status`                | Domain verification lifecycle state                                            |
+| `verificationTokenHash` | One-way hash of the active ownership challenge, never exposed in API responses |
+| `verifiedAt`            | Time verification completed, nullable                                          |
+| `createdAt`             | Creation time                                                                  |
+| `updatedAt`             | Last mutation time                                                             |
 
 ### Verification states
 
@@ -45,6 +45,18 @@ verified -> revoked
 - `pending`: registered but not yet verified; cannot receive production mail or create active identities.
 - `verified`: ownership verification succeeded; identities may be created and routed.
 - `revoked`: no longer usable; existing identities must not accept new mail while the domain is revoked.
+
+When a domain is created, Nymveil returns a one-time verification token and the
+TXT record name/value to the authenticated owner. The owner publishes that TXT
+record in DNS and asks Nymveil to verify it. Nymveil hashes the token at rest,
+checks the DNS record through a DNS-over-HTTPS resolver, and clears the stored
+hash after successful verification. A new token can be issued only while the
+domain is pending; issuing one invalidates the previous token.
+
+Cloudflare Email Routing onboarding is a separate deployment step. Cloudflare
+must be configured to receive mail for the verified domain and route it to the
+Nymveil Worker; the Nymveil TXT challenge proves application-level ownership
+but does not configure Cloudflare MX, SPF, or DKIM records.
 
 Revocation is a safety state. Re-verification may be introduced later as an explicit product decision; it is not assumed by the MVP.
 

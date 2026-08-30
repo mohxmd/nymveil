@@ -53,6 +53,10 @@ function createUseCases(
     userId: "user-1",
     hostname: "Example.com.",
     status: "verified",
+    verificationTokenHash: null,
+    verifiedAt: now,
+    createdAt: now,
+    updatedAt: now,
   },
 ) {
   const repository = new InMemoryIdentityRepository([domain]);
@@ -131,6 +135,10 @@ describe("IdentityUseCases", () => {
           userId: "user-1",
           hostname: "example.com",
           status: "verified",
+          verificationTokenHash: null,
+          verifiedAt: now,
+          createdAt: now,
+          updatedAt: now,
         }),
         listByUserId: async () => [],
       },

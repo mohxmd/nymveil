@@ -112,14 +112,21 @@ output and record the API and dashboard URLs for the environment.
 
 ## Custom-domain email routing
 
-Before enabling inbound mail:
+Domain ownership and Cloudflare Email Routing are separate setup steps. In the
+dashboard, add the domain and publish the Nymveil TXT challenge shown by the
+domain setup card. Verify it before creating identities. Then, in Cloudflare's
+Email Routing configuration:
 
 1. Onboard the custom domain in Cloudflare Email Routing.
-2. Complete the DNS records and domain verification shown by Cloudflare.
+2. Complete the DNS records and domain verification shown by Cloudflare. Cloudflare manages the routing MX and related mail records.
 3. Create a routing rule that targets the Nymveil Worker.
 4. Send a test message to a known active identity.
 5. Confirm that unknown, expired, and torched identities are discarded without
    permanent message storage.
+
+Nymveil's TXT challenge is named `_nymveil-challenge.<domain>` and is distinct
+from Cloudflare's Email Routing records. Keep the challenge token private and
+do not log it.
 
 Cloudflare routes mail to Workers through the Worker's `email` handler. The
 deployed entrypoint now exports that handler and composes recipient routing,

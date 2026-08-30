@@ -16,13 +16,6 @@ const identitySchema = z.object({
   updatedAt: timestamp,
 });
 
-const domainSchema = z.object({
-  id: z.string(),
-  userId: z.string(),
-  hostname: z.string(),
-  status: z.enum(["pending", "verified", "revoked"]),
-});
-
 const destinationSchema = z.object({
   id: z.string(),
   provider: z.string().min(1),
@@ -37,10 +30,6 @@ export const identityListResponseSchema = z.object({
 
 export const identityResponseSchema = z.object({
   identity: identitySchema,
-});
-
-export const domainListResponseSchema = z.object({
-  domains: z.array(domainSchema),
 });
 
 export const destinationListResponseSchema = z.object({

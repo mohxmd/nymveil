@@ -14,12 +14,7 @@ export interface Identity {
   updatedAt: string;
 }
 
-export interface Domain {
-  id: string;
-  userId: string;
-  hostname: string;
-  status: "pending" | "verified" | "revoked";
-}
+export type { Domain } from "$lib/features/domains/types";
 
 export interface Destination {
   id: string;

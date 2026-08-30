@@ -30,6 +30,10 @@ const domain: DomainRecord = {
   userId: "user-1",
   hostname: "example.com",
   status: "verified",
+  verificationTokenHash: null,
+  verifiedAt: now,
+  createdAt: now,
+  updatedAt: now,
 };
 
 function createDestination(

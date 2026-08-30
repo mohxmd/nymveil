@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
 import { createClient } from "@libsql/client";
-import { IdentityUseCases } from "@nymveil/core";
+import { DomainHostnameConflictError, IdentityUseCases, type DomainRecord } from "@nymveil/core";
 import { eq } from "drizzle-orm";
 
 import { createDbFromClient } from "../src/client";
@@ -40,15 +40,16 @@ async function createTestContext() {
   });
 
   const identityRepository = createIdentityRepository(db);
+  const domainRepository = createDomainRepository(db);
   const useCases = new IdentityUseCases({
     clock: { now: () => new Date(now) },
-    domainRepository: createDomainRepository(db),
+    domainRepository,
     identityRepository,
     idGenerator: { generate: () => "identity-1" },
     localPartGenerator: { generate: () => "github-k7x2" },
   });
 
-  return { client, db, identityRepository, useCases };
+  return { client, db, domainRepository, identityRepository, useCases };
 }
 
 describe("identity repository", () => {
@@ -89,5 +90,38 @@ describe("identity repository", () => {
     expect(expired.status).toBe("expired");
     expect(torched.status).toBe("torched");
     expect((await identityRepository.findById(created.id))?.torchedAt).toEqual(now);
+  });
+
+  test("persists domain verification state and maps hostname conflicts", async () => {
+    const { domainRepository } = await createTestContext();
+    const pending: DomainRecord = {
+      id: "domain-2",
+      userId: "user-1",
+      hostname: "pending.example.com",
+      status: "pending",
+      verificationTokenHash: "challenge-hash",
+      verifiedAt: null,
+      createdAt: now,
+      updatedAt: now,
+    };
+
+    const created = await domainRepository.create(pending);
+    expect(await domainRepository.findById(pending.id)).toEqual(created);
+    expect(await domainRepository.findByHostname(pending.hostname)).toEqual(created);
+    expect(await domainRepository.listByUserId(pending.userId)).toContainEqual(created);
+
+    const verified = await domainRepository.update({
+      ...created,
+      status: "verified",
+      verificationTokenHash: null,
+      verifiedAt: now,
+      updatedAt: new Date("2026-08-30T12:01:00.000Z"),
+    });
+    expect(verified.status).toBe("verified");
+    expect(verified.verificationTokenHash).toBeNull();
+
+    await expect(domainRepository.create({ ...pending, id: "domain-3" })).rejects.toBeInstanceOf(
+      DomainHostnameConflictError,
+    );
   });
 });

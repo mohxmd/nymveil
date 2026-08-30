@@ -7,6 +7,10 @@ export interface DomainRecord {
   userId: string;
   hostname: string;
   status: "pending" | "verified" | "revoked";
+  verificationTokenHash: string | null;
+  verifiedAt: Date | null;
+  createdAt: Date;
+  updatedAt: Date;
 }
 
 export interface IdentityRecord {

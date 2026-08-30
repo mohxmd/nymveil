@@ -6,7 +6,6 @@ import {
   destinationListResponseSchema,
   destinationResponseSchema,
   destinationToggleInputSchema,
-  domainListResponseSchema,
   identityIdInputSchema,
   identityDestinationListResponseSchema,
   identityListResponseSchema,
@@ -15,6 +14,15 @@ import {
   routeResponseSchema,
   updateIdentityInputSchema,
 } from "$lib/features/identities/schemas";
+import {
+  createDomainInputSchema,
+  domainIdInputSchema,
+  domainListResponseSchema,
+  domainProvisioningResponseSchema,
+  domainResponseSchema,
+  verifyDomainInputSchema,
+} from "$lib/features/domains/schemas";
+import type { DomainFormAction } from "$lib/features/domains/types";
 import { deliveryAttemptListResponseSchema } from "$lib/features/delivery/schemas";
 import type { DeliveryAttempt } from "$lib/features/delivery/types";
 import { toIsoDateTime } from "$lib/features/identities/dates";
@@ -49,10 +57,11 @@ function parseExpiration(formData: FormData): { value?: string | null; error?: s
 }
 
 function actionFailure(
-  action: IdentityFormAction,
+  action: IdentityFormAction | DomainFormAction,
   error: unknown,
   identityId?: string,
   destinationId?: string,
+  domainId?: string,
 ) {
   if (error instanceof ApiRequestError && error.status === 401) {
     redirect(303, "/login");
@@ -65,6 +74,7 @@ function actionFailure(
     action,
     identityId,
     destinationId,
+    domainId,
     error: error instanceof ApiRequestError ? error.message : actionError,
   });
 }
@@ -135,6 +145,107 @@ export const load: PageServerLoad = async ({ fetch }) => {
 };
 
 export const actions: Actions = {
+  "create-domain": async ({ request, fetch }) => {
+    const formData = await request.formData();
+    const parsedInput = createDomainInputSchema.safeParse({
+      hostname: readText(formData, "hostname"),
+    });
+
+    if (!parsedInput.success) {
+      return fail(400, {
+        action: "create-domain" as const,
+        error: "Enter a valid domain hostname.",
+      });
+    }
+
+    try {
+      const response = await requestJson(fetch, "/api/domains", domainProvisioningResponseSchema, {
+        method: "POST",
+        body: JSON.stringify(parsedInput.data),
+      });
+
+      return {
+        action: "create-domain" as const,
+        domainId: response.domain.id,
+        verification: response.verification,
+        success: true,
+      };
+    } catch (error) {
+      return actionFailure("create-domain", error);
+    }
+  },
+
+  "rotate-domain-token": async ({ request, fetch }) => {
+    const formData = await request.formData();
+    const parsedInput = domainIdInputSchema.safeParse({
+      domainId: readText(formData, "domainId"),
+    });
+
+    if (!parsedInput.success) {
+      return fail(400, {
+        action: "rotate-domain-token" as const,
+        domainId: readText(formData, "domainId"),
+        error: "The domain id is invalid.",
+      });
+    }
+
+    try {
+      const response = await requestJson(
+        fetch,
+        `/api/domains/${encodeURIComponent(parsedInput.data.domainId)}/verification-token`,
+        domainProvisioningResponseSchema,
+        { method: "POST" },
+      );
+
+      return {
+        action: "rotate-domain-token" as const,
+        domainId: response.domain.id,
+        verification: response.verification,
+        success: true,
+      };
+    } catch (error) {
+      return actionFailure(
+        "rotate-domain-token",
+        error,
+        undefined,
+        undefined,
+        parsedInput.data.domainId,
+      );
+    }
+  },
+
+  "verify-domain": async ({ request, fetch }) => {
+    const formData = await request.formData();
+    const parsedInput = verifyDomainInputSchema.safeParse({
+      domainId: readText(formData, "domainId"),
+      verificationToken: readText(formData, "verificationToken"),
+    });
+
+    if (!parsedInput.success) {
+      return fail(400, {
+        action: "verify-domain" as const,
+        domainId: readText(formData, "domainId"),
+        error: "Enter the verification token shown for this domain.",
+      });
+    }
+
+    try {
+      const response = await requestJson(
+        fetch,
+        `/api/domains/${encodeURIComponent(parsedInput.data.domainId)}/verify`,
+        domainResponseSchema,
+        {
+          method: "POST",
+          body: JSON.stringify({ verificationToken: parsedInput.data.verificationToken }),
+        },
+      );
+
+      return { action: "verify-domain" as const, domainId: response.domain.id, success: true };
+    } catch (error) {
+      return actionFailure("verify-domain", error, undefined, undefined, parsedInput.data.domainId);
+    }
+  },
+
   create: async ({ request, fetch }) => {
     const formData = await request.formData();
     const parsedInput = createIdentityInputSchema.safeParse({
