@@ -101,6 +101,16 @@ The first release must include:
 - Permanent non-reuse of torched identity addresses.
 - Safe handling of duplicate inbound events where the delivery platform may retry.
 
+The current Cloudflare deployment defaults to 120 API requests per minute per
+authenticated user (or client address for unauthenticated authentication
+requests) and 10 identity-creation requests per minute per user. These are
+abuse-control defaults, not a replacement for account-level product limits.
+
+Cloudflare inbound email processing currently uses the Worker's internal email
+event binding rather than a public HTTP webhook. If an HTTP webhook is added,
+it must verify the provider signature or secret token before parsing or routing
+the message.
+
 Abuse controls must fail closed when configuration is missing or invalid. Limits may be relaxed deliberately for private deployments through documented configuration.
 
 ## Domain and routing safety

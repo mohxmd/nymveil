@@ -3,6 +3,7 @@ import { IdentityDomainError, type IdentityUseCases } from "@nymveil/core";
 
 import { requireSession } from "../../http/auth-middleware";
 import { ApiError, apiErrorHandler } from "../../http/errors";
+import { createUserRateLimitMiddleware, type RateLimiter } from "../../http/rate-limit";
 import { serverFactory, type AuthInstance } from "../../http/types";
 import { createIdentityService, serializeIdentity, type IdentityService } from "./service";
 import { IdentityModel } from "./model";
@@ -34,9 +35,14 @@ function toIdentityApiError(error: unknown): ApiError | undefined {
 export interface IdentityRouteDependencies {
   auth: AuthInstance;
   createIdentityUseCases: () => IdentityUseCases;
+  identityCreationRateLimiter?: RateLimiter;
 }
 
-export function createIdentityRoutes({ auth, createIdentityUseCases }: IdentityRouteDependencies) {
+export function createIdentityRoutes({
+  auth,
+  createIdentityUseCases,
+  identityCreationRateLimiter,
+}: IdentityRouteDependencies) {
   const routes = serverFactory.createApp();
   const service: IdentityService = createIdentityService({ createIdentityUseCases });
 
@@ -46,8 +52,15 @@ export function createIdentityRoutes({ auth, createIdentityUseCases }: IdentityR
 
   routes.use("*", requireSession(auth));
 
+  const createIdentityRateLimit = identityCreationRateLimiter
+    ? createUserRateLimitMiddleware(identityCreationRateLimiter, "identity:create")
+    : serverFactory.createMiddleware(async (_c, next) => {
+        await next();
+      });
+
   routes.post(
     "/",
+    createIdentityRateLimit,
     zValidator("json", IdentityModel.createBody, (result) => {
       if (!result.success) {
         throw new ApiError("bad_request", 400, "The identity request is invalid.");

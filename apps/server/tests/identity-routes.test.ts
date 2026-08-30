@@ -2,6 +2,7 @@ import { describe, expect, test } from "bun:test";
 import { IdentityDomainError, type IdentityRecord, type IdentityUseCases } from "@nymveil/core";
 
 import { createApp } from "../src/app";
+import type { RateLimiter } from "../src/http/rate-limit";
 import type { AuthInstance, AuthSession } from "../src/http/types";
 
 const identity: IdentityRecord = {
@@ -49,6 +50,7 @@ function createAuthMock(authSession: AuthSession | null = authenticatedSession):
 function createTestApp(
   overrides: Partial<IdentityUseCases> = {},
   authSession: AuthSession | null = authenticatedSession,
+  identityCreationRateLimiter?: RateLimiter,
 ) {
   const calls = {
     create: [] as unknown[],
@@ -87,6 +89,7 @@ function createTestApp(
       auth: createAuthMock(authSession),
       corsOrigin: "http://localhost:5173",
       createIdentityUseCases: () => useCases,
+      identityCreationRateLimiter,
       enableAuthLogging: false,
     }),
   };
@@ -131,6 +134,22 @@ describe("identity routes", () => {
     expect((await response.json()) as unknown).toMatchObject({
       identity: { id: "identity-1", address: "github-k7x2@example.com" },
     });
+  });
+
+  test("limits identity creation without invoking the use-case", async () => {
+    const limiter: RateLimiter = {
+      limit: async () => ({ success: false }),
+    };
+    const { app, calls } = createTestApp({}, authenticatedSession, limiter);
+
+    const response = await app.request("/api/identities", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ domainId: "domain-1", label: "GitHub" }),
+    });
+
+    expect(response.status).toBe(429);
+    expect(calls.create).toHaveLength(0);
   });
 
   test("lists and reads only through the authenticated use-case boundary", async () => {

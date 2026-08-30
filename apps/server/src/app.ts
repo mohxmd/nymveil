@@ -1,6 +1,7 @@
 import { createAuthMiddleware, type BetterAuthInstance } from "evlog/better-auth";
 import { evlog } from "evlog/hono";
 import { cors } from "hono/cors";
+import { secureHeaders } from "hono/secure-headers";
 
 import type {
   DeliveryMetadataUseCases,
@@ -17,10 +18,13 @@ import { createIdentityRoutes } from "./modules/identities";
 import { createDomainRoutes } from "./modules/domains";
 import { createDestinationRoutes } from "./modules/destinations";
 import { createDeliveryMetadataRoutes } from "./modules/delivery-metadata";
+import { createApiRateLimitMiddleware, type RateLimiter } from "./http/rate-limit";
 
 export interface AppDependencies {
   auth: AuthInstance;
   corsOrigin: string;
+  apiRateLimiter?: RateLimiter;
+  identityCreationRateLimiter?: RateLimiter;
   enableAuthLogging?: boolean;
   createIdentityUseCases?: () => IdentityUseCases;
   createDomainRepository?: () => DomainRepository;
@@ -31,6 +35,8 @@ export interface AppDependencies {
 export function createApp({
   auth,
   corsOrigin,
+  apiRateLimiter,
+  identityCreationRateLimiter,
   enableAuthLogging = true,
   createIdentityUseCases,
   createDomainRepository,
@@ -63,10 +69,19 @@ export function createApp({
     }),
   );
 
+  app.use("/*", secureHeaders());
+
+  if (apiRateLimiter) {
+    app.use("/api/*", createApiRateLimitMiddleware(auth, apiRateLimiter));
+  }
+
   app.all("/api/auth/*", (c) => auth.handler(c.req.raw));
 
   if (createIdentityUseCases) {
-    app.route("/api/identities", createIdentityRoutes({ auth, createIdentityUseCases }));
+    app.route(
+      "/api/identities",
+      createIdentityRoutes({ auth, createIdentityUseCases, identityCreationRateLimiter }),
+    );
   }
 
   if (createDomainRepository) {
