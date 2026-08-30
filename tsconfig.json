@@ -1,3 +1,1 @@
-{
-  "extends": "@nymveil/config/tsconfig.base.json"
-}
+{ "extends": "@nymveil/config/tsconfig.base.json" }
