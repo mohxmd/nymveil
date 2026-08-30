@@ -74,6 +74,7 @@ function createRoutingUseCases({
     identityRepository,
     domainRepository: {
       findById: async () => domainRecord,
+      listByUserId: async () => [],
     },
     destinationRepository: {
       findById: async () => null,

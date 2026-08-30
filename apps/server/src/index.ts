@@ -15,12 +15,13 @@ import { asScheduledCleanupJob, createScheduledCleanupHandler } from "./maintena
 
 initLogger({ env: { service: "nymveil-server" } });
 
+const db = createDb();
+
 const app = createApp({
   auth: createAuth(),
   corsOrigin: env.CORS_ORIGIN,
+  createDomainRepository: () => createDomainRepository(db),
   createIdentityUseCases: () => {
-    const db = createDb();
-
     return new IdentityUseCases({
       domainRepository: createDomainRepository(db),
       identityRepository: createIdentityRepository(db),

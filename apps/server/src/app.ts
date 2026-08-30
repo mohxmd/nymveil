@@ -2,18 +2,21 @@ import { createAuthMiddleware, type BetterAuthInstance } from "evlog/better-auth
 import { evlog } from "evlog/hono";
 import { cors } from "hono/cors";
 
+import type { DomainRepository, IdentityUseCases } from "@nymveil/core";
+
 import type { AuthInstance } from "./http/types";
 import { apiErrorHandler, apiNotFoundHandler } from "./http/errors";
 import { requireSession } from "./http/auth-middleware";
 import { serverFactory } from "./http/types";
 import { createIdentityRoutes } from "./modules/identities";
-import type { IdentityUseCases } from "@nymveil/core";
+import { createDomainRoutes } from "./modules/domains";
 
 export interface AppDependencies {
   auth: AuthInstance;
   corsOrigin: string;
   enableAuthLogging?: boolean;
   createIdentityUseCases?: () => IdentityUseCases;
+  createDomainRepository?: () => DomainRepository;
 }
 
 export function createApp({
@@ -21,6 +24,7 @@ export function createApp({
   corsOrigin,
   enableAuthLogging = true,
   createIdentityUseCases,
+  createDomainRepository,
 }: AppDependencies) {
   const app = serverFactory.createApp();
 
@@ -42,7 +46,7 @@ export function createApp({
     "/*",
     cors({
       origin: corsOrigin,
-      allowMethods: ["GET", "POST", "OPTIONS"],
+      allowMethods: ["GET", "POST", "PATCH", "OPTIONS"],
       allowHeaders: ["Content-Type", "Authorization"],
       credentials: true,
     }),
@@ -52,6 +56,13 @@ export function createApp({
 
   if (createIdentityUseCases) {
     app.route("/api/identities", createIdentityRoutes({ auth, createIdentityUseCases }));
+  }
+
+  if (createDomainRepository) {
+    app.route(
+      "/api/domains",
+      createDomainRoutes({ auth, domainRepository: createDomainRepository() }),
+    );
   }
 
   app.get("/api/me", requireSession(auth), (c) => {

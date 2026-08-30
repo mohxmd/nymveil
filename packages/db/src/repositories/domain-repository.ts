@@ -1,4 +1,4 @@
-import { eq } from "drizzle-orm";
+import { asc, eq } from "drizzle-orm";
 
 import type { DomainRepository } from "@nymveil/core";
 
@@ -18,6 +18,16 @@ export function createDomainRepository(db: Database): DomainRepository {
       const [row] = await db.select(domainSelection).from(domain).where(eq(domain.id, id)).limit(1);
 
       return row ?? null;
+    },
+
+    async listByUserId(userId) {
+      const rows = await db
+        .select(domainSelection)
+        .from(domain)
+        .where(eq(domain.userId, userId))
+        .orderBy(asc(domain.hostname), asc(domain.id));
+
+      return rows;
     },
   };
 }
