@@ -8,6 +8,7 @@ import {
 import {
   createNymveilNotificationClient,
   createNymveilNotificationDispatcher,
+  nymveilNotificationRetryPolicy,
   toNotificationPayload,
 } from "../src/delivery/notifications";
 
@@ -101,6 +102,14 @@ describe("Nymveil notification dispatcher", () => {
         address: "github-k7x2@example.com",
         receivedAt: "2026-08-30T12:00:00.000Z",
       },
+    });
+  });
+
+  test("uses a bounded retry policy for transient provider failures", () => {
+    expect(nymveilNotificationRetryPolicy).toEqual({
+      defaultRetries: 2,
+      defaultRetryDelay: 250,
+      defaultTimeout: 5_000,
     });
   });
 });

@@ -28,6 +28,18 @@ const notificationConfigSchema = z.object({
 export type NymveilNotificationConfig = z.infer<typeof notificationConfigSchema>;
 export type NymveilNotificationChannel = "discord" | "telegram";
 
+/**
+ * Bounded retries for transient provider failures during one inbound event.
+ * Cross-invocation retries are intentionally deferred until a durable queue or
+ * an explicit retry operation exists, because an unknown provider outcome can
+ * otherwise duplicate a third-party notification.
+ */
+export const nymveilNotificationRetryPolicy = {
+  defaultRetries: 2,
+  defaultRetryDelay: 250,
+  defaultTimeout: 5_000,
+} as const;
+
 export interface NymveilDeliveryEvent {
   identityAddress: string;
   identityLabel: string;
@@ -53,7 +65,12 @@ export function parseNotificationConfig(input: unknown): NymveilNotificationConf
 
 export function createNymveilNotificationClient(input: unknown): NotificationClient {
   const config = parseNotificationConfig(input) satisfies NotificationClientConfig;
-  return new NotificationClient(config);
+  return new NotificationClient({
+    ...config,
+    defaultRetries: config.defaultRetries ?? nymveilNotificationRetryPolicy.defaultRetries,
+    defaultRetryDelay: config.defaultRetryDelay ?? nymveilNotificationRetryPolicy.defaultRetryDelay,
+    defaultTimeout: config.defaultTimeout ?? nymveilNotificationRetryPolicy.defaultTimeout,
+  });
 }
 
 export function createNymveilNotificationDispatcher(

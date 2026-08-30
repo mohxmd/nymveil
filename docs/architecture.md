@@ -76,6 +76,23 @@ interface DeliveryPort {
 
 One failed destination must not prevent independent eligible destinations from being attempted. Retry, timeout, provider authentication, and transport behavior belong outside the core.
 
+### Delivery reliability policy
+
+The server creates one delivery attempt per `(eventId, destinationId)` pair.
+The unique delivery key is claimed before provider delivery, so repeated source
+events and concurrent Worker invocations do not send the same destination twice.
+Each provider gets two bounded retries for transient transport and HTTP failures
+with a five-second request timeout and short exponential backoff. Permanent
+configuration and client errors are not retried.
+
+After the bounded in-process retries are exhausted, the attempt is marked
+`failed` with a provider-neutral error category. The first release does not
+automatically retry failed attempts across separate events because a provider
+may have accepted a request before the Worker lost the response; a durable queue
+or explicit retry operation is required before adding that behavior. Destination
+results are isolated, so a partial failure does not prevent other selected
+destinations from being attempted.
+
 ## Application and infrastructure adapters
 
 ### `apps/server`

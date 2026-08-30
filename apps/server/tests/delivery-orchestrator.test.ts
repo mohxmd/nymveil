@@ -147,4 +147,40 @@ describe("delivery orchestrator", () => {
     expect(second.status).toBe("deduplicated");
     expect(context.sentProviders).toEqual(["discord"]);
   });
+
+  test("returns an isolated failure when attempt persistence fails", async () => {
+    const sentProviders: string[] = [];
+    const repository: DeliveryAttemptRepository = {
+      findByDeliveryKey: async () => null,
+      findById: async () => null,
+      listByUserId: async () => [],
+      create: async (attempt) => attempt,
+      update: async (attempt) => {
+        if (attempt.destinationId === "destination-1") {
+          throw new Error("temporary database failure");
+        }
+        return attempt;
+      },
+    };
+    const orchestrator = createDeliveryOrchestrator({
+      attemptRepository: repository,
+      clock: { now: () => now },
+      idGenerator: { generate: () => "attempt-1" },
+      notificationDispatcher: {
+        dispatch: async (_event, destination) => {
+          sentProviders.push(destination.provider);
+          return [{ channel: destination.provider, success: true }];
+        },
+      },
+    });
+
+    const result = await orchestrator.deliver(event, [
+      destination("destination-1", "discord"),
+      destination("destination-2", "telegram"),
+    ]);
+
+    expect(result.status).toBe("partially_failed");
+    expect(result.outcomes.map((outcome) => outcome.status)).toEqual(["failed", "succeeded"]);
+    expect(sentProviders.sort()).toEqual(["discord", "telegram"]);
+  });
 });

@@ -147,7 +147,7 @@ export function createDeliveryOrchestrator({
     ): Promise<DeliveryOrchestrationResult> {
       const outcomes = await Promise.all(
         destinations.map((destination) =>
-          deliverToDestination({
+          safelyDeliverToDestination({
             attemptRepository,
             clock,
             destination,
@@ -164,6 +164,27 @@ export function createDeliveryOrchestrator({
       };
     },
   };
+}
+
+async function safelyDeliverToDestination(
+  dependencies: ResolvedDeliveryDependencies & {
+    destination: DestinationRecord;
+    event: NymveilDeliveryRequest;
+    idGenerator: { generate(): string };
+  },
+): Promise<DeliveryOutcome> {
+  try {
+    return await deliverToDestination(dependencies);
+  } catch {
+    // A destination must not prevent independent destinations from being
+    // attempted. Provider and database details stay out of delivery metadata.
+    return {
+      destinationId: dependencies.destination.id,
+      provider: dependencies.destination.provider,
+      status: "failed",
+      attempt: null,
+    };
+  }
 }
 
 async function deliverToDestination({
