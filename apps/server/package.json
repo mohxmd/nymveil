@@ -3,7 +3,7 @@
   "type": "module",
   "main": "src/index.ts",
   "scripts": {
-    "build": "tsdown",
+    "build": "tsdown --config-loader native",
     "check-types": "tsc -b",
     "test": "bun test tests/*.test.ts",
     "compile": "bun build --compile --minify --sourcemap --bytecode ./src/index.ts --outfile server"
