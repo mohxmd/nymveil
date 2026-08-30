@@ -139,10 +139,10 @@ Attachments, unlike [actions](https://svelte.dev/docs/svelte/use/llms.txt), are 
 ```js
 // @errors: 7006 2304 2552
 function foo(bar) {
-	return (node) => {
-		veryExpensiveSetupWork(node);
-		update(node, bar);
-	};
+  return (node) => {
+    veryExpensiveSetupWork(node);
+    update(node, bar);
+  };
 }
 ```
 
