@@ -10,6 +10,7 @@ config({ path: "../../apps/server/.env" });
 
 export const server = Cloudflare.Worker("server", {
   main: "../../apps/server/src/index.ts",
+  crons: ["0 * * * *"],
   compatibility: {
     flags: ["nodejs_compat"],
   },
