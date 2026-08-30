@@ -77,6 +77,9 @@ Run the project checks:
 bun run check
 ```
 
+See the [development guide](./docs/development.md) for local database setup
+and the [deployment guide](./docs/deployment.md) for Cloudflare operations.
+
 Start the development applications:
 
 ```bash
