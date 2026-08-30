@@ -2,6 +2,7 @@ import type { DomainRecord, IdentityRecord } from "./types";
 
 export interface DomainRepository {
   findById(id: string): Promise<DomainRecord | null>;
+  listByUserId(userId: string): Promise<DomainRecord[]>;
 }
 
 export interface IdentityRepository {

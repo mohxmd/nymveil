@@ -1,4 +1,4 @@
-export type DeliveryErrorCode = "delivery_not_found" | "delivery_key_conflict";
+export type DeliveryErrorCode = "invalid_input" | "delivery_not_found" | "delivery_key_conflict";
 
 export class DeliveryDomainError extends Error {
   constructor(

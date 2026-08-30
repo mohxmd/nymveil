@@ -58,6 +58,8 @@ function createUseCases(
   const repository = new InMemoryIdentityRepository([domain]);
   const domainRepository: DomainRepository = {
     findById: async (id) => repository.domains.find((candidate) => candidate.id === id) ?? null,
+    listByUserId: async (userId) =>
+      repository.domains.filter((candidate) => candidate.userId === userId),
   };
 
   return {
@@ -130,6 +132,7 @@ describe("IdentityUseCases", () => {
           hostname: "example.com",
           status: "verified",
         }),
+        listByUserId: async () => [],
       },
       identityRepository: repository,
       idGenerator: { generate: () => "identity-2" },

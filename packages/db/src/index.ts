@@ -17,4 +17,8 @@ export type { Database } from "./client";
 
 export { createDomainRepository } from "./repositories/domain-repository";
 export { createDeliveryAttemptRepository } from "./repositories/delivery-attempt-repository";
+export { createDeliveryMetadataMaintenanceRepository } from "./repositories/delivery-metadata-maintenance-repository";
+export { createDestinationRepository } from "./repositories/destination-repository";
 export { createIdentityRepository } from "./repositories/identity-repository";
+export { createIdentityDestinationRepository } from "./repositories/identity-destination-repository";
+export { createIdentityMaintenanceRepository } from "./repositories/identity-maintenance-repository";

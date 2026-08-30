@@ -21,6 +21,18 @@ Security-sensitive behavior must be enforced server-side. Client validation is f
 
 Full email content may exist transiently in memory while it is parsed and delivered. It must not be written to ordinary logs, durable storage, analytics, error reports, or delivery metadata by default.
 
+## Scheduled retention cleanup
+
+The maintenance job runs hourly and processes records in bounded batches of 100 items. Its default policy is:
+
+- Expired identities are retained for 30 days, then permanently deleted.
+- Completed delivery attempts are retained for 30 days, then permanently deleted.
+- Pending delivery attempts are never removed by retention cleanup.
+- Torched identities are never removed by expiry cleanup, preserving their permanent non-reuse state.
+- Expiry reminders are disabled unless an application explicitly configures a reminder handler.
+
+The retention periods and batch size are application configuration and must be reviewed before production launch. Cleanup failures must remain observable to the deployment runtime; a failed run must not be reported as successful.
+
 ## Email content handling
 
 Inbound email is untrusted input. The server must:

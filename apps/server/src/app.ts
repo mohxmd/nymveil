@@ -2,18 +2,30 @@ import { createAuthMiddleware, type BetterAuthInstance } from "evlog/better-auth
 import { evlog } from "evlog/hono";
 import { cors } from "hono/cors";
 
+import type {
+  DeliveryMetadataUseCases,
+  DestinationUseCases,
+  DomainRepository,
+  IdentityUseCases,
+} from "@nymveil/core";
+
 import type { AuthInstance } from "./http/types";
 import { apiErrorHandler, apiNotFoundHandler } from "./http/errors";
 import { requireSession } from "./http/auth-middleware";
 import { serverFactory } from "./http/types";
 import { createIdentityRoutes } from "./modules/identities";
-import type { IdentityUseCases } from "@nymveil/core";
+import { createDomainRoutes } from "./modules/domains";
+import { createDestinationRoutes } from "./modules/destinations";
+import { createDeliveryMetadataRoutes } from "./modules/delivery-metadata";
 
 export interface AppDependencies {
   auth: AuthInstance;
   corsOrigin: string;
   enableAuthLogging?: boolean;
   createIdentityUseCases?: () => IdentityUseCases;
+  createDomainRepository?: () => DomainRepository;
+  createDestinationUseCases?: () => DestinationUseCases;
+  createDeliveryMetadataUseCases?: () => DeliveryMetadataUseCases;
 }
 
 export function createApp({
@@ -21,6 +33,9 @@ export function createApp({
   corsOrigin,
   enableAuthLogging = true,
   createIdentityUseCases,
+  createDomainRepository,
+  createDestinationUseCases,
+  createDeliveryMetadataUseCases,
 }: AppDependencies) {
   const app = serverFactory.createApp();
 
@@ -42,7 +57,7 @@ export function createApp({
     "/*",
     cors({
       origin: corsOrigin,
-      allowMethods: ["GET", "POST", "OPTIONS"],
+      allowMethods: ["DELETE", "GET", "PATCH", "POST", "PUT", "OPTIONS"],
       allowHeaders: ["Content-Type", "Authorization"],
       credentials: true,
     }),
@@ -52,6 +67,21 @@ export function createApp({
 
   if (createIdentityUseCases) {
     app.route("/api/identities", createIdentityRoutes({ auth, createIdentityUseCases }));
+  }
+
+  if (createDomainRepository) {
+    app.route(
+      "/api/domains",
+      createDomainRoutes({ auth, domainRepository: createDomainRepository() }),
+    );
+  }
+
+  if (createDestinationUseCases) {
+    app.route("/api", createDestinationRoutes({ auth, createDestinationUseCases }));
+  }
+
+  if (createDeliveryMetadataUseCases) {
+    app.route("/api", createDeliveryMetadataRoutes({ auth, createDeliveryMetadataUseCases }));
   }
 
   app.get("/api/me", requireSession(auth), (c) => {

@@ -80,12 +80,13 @@ export function createDeliveryAttemptRepository(db: Database): DeliveryAttemptRe
       return row ? mapDeliveryAttemptRow(row) : null;
     },
 
-    async listByUserId(userId) {
+    async listByUserId(userId, options) {
       const rows = await db
         .select(deliveryAttemptSelection)
         .from(deliveryAttempt)
         .where(eq(deliveryAttempt.userId, userId))
-        .orderBy(desc(deliveryAttempt.createdAt), desc(deliveryAttempt.id));
+        .orderBy(desc(deliveryAttempt.createdAt), desc(deliveryAttempt.id))
+        .limit(options?.limit ?? 50);
 
       return rows.map(mapDeliveryAttemptRow);
     },
