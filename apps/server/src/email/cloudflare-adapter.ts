@@ -1,6 +1,12 @@
 import type { ForwardableEmailMessage } from "@cloudflare/workers-types";
 import type { InboundEmail, InboundEmailProcessor } from "@nymveil/core";
 
+export type CloudflareEmailHandler = (
+  message: ForwardableEmailMessage,
+  env?: unknown,
+  ctx?: unknown,
+) => void | Promise<void>;
+
 export type CloudflareEmailAdapterErrorCode = "invalid_recipient" | "invalid_raw_size";
 
 export class CloudflareEmailAdapterError extends Error {
@@ -85,7 +91,9 @@ export function normalizeCloudflareEmailMessage(message: ForwardableEmailMessage
   };
 }
 
-export function createCloudflareEmailHandler(processor: InboundEmailProcessor) {
+export function createCloudflareEmailHandler(
+  processor: InboundEmailProcessor,
+): CloudflareEmailHandler {
   return async (message: ForwardableEmailMessage): Promise<void> => {
     await processor.process(normalizeCloudflareEmailMessage(message));
   };

@@ -2,8 +2,10 @@ import {
   DeliveryMetadataUseCases,
   DestinationUseCases,
   ExpirationCleanup,
+  InboundRoutingUseCases,
   IdentityUseCases,
 } from "@nymveil/core";
+import type { ExportedHandler } from "@cloudflare/workers-types";
 import { createAuth } from "@nymveil/auth";
 import {
   createDb,
@@ -19,6 +21,12 @@ import { env } from "@nymveil/env/server";
 import { initLogger } from "evlog";
 
 import { createApp } from "./app";
+import { createDeliveryOrchestrator } from "./delivery/orchestrator";
+import {
+  createNymveilNotificationClient,
+  createNymveilNotificationDispatcher,
+} from "./delivery/notifications";
+import { createInboundEmailHandler } from "./email/composition";
 import { asScheduledCleanupJob, createScheduledCleanupHandler } from "./maintenance/cleanup";
 
 initLogger({ env: { service: "nymveil-server" } });
@@ -53,6 +61,21 @@ const app = createApp({
     }),
 });
 
+const inboundEmailHandler = createInboundEmailHandler({
+  routing: new InboundRoutingUseCases({
+    domainRepository: createDomainRepository(db),
+    identityRepository: createIdentityRepository(db),
+    destinationRepository: createDestinationRepository(db),
+    identityDestinationRepository: createIdentityDestinationRepository(db),
+  }),
+  delivery: createDeliveryOrchestrator({
+    attemptRepository: createDeliveryAttemptRepository(db),
+    notificationDispatcher: createNymveilNotificationDispatcher(
+      createNymveilNotificationClient({}),
+    ),
+  }),
+});
+
 const scheduledCleanup = createScheduledCleanupHandler(
   asScheduledCleanupJob({
     run: () => {
@@ -67,7 +90,10 @@ const scheduledCleanup = createScheduledCleanupHandler(
   }),
 );
 
-export default {
+const worker = {
   fetch: app.fetch,
   scheduled: scheduledCleanup,
-};
+  email: inboundEmailHandler,
+} satisfies Omit<ExportedHandler<Env>, "fetch"> & { fetch: typeof app.fetch };
+
+export default worker;

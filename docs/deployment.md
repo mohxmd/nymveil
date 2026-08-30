@@ -121,11 +121,11 @@ Before enabling inbound mail:
    permanent message storage.
 
 Cloudflare routes mail to Workers through the Worker's `email` handler. The
-current repository contains the Cloudflare message adapter, but the deployed
-entrypoint does not yet export an `email` handler. Email activation therefore
-remains blocked until that handler is wired into `apps/server/src/index.ts` and
-covered by an end-to-end deployment test. See Cloudflare's [Workers email
-handler documentation](https://developers.cloudflare.com/email-service/api/route-emails/email-handler/).
+deployed entrypoint now exports that handler and composes recipient routing,
+bounded parsing, and delivery orchestration. Production activation still
+requires destination provisioning, provider configuration, Cloudflare routing,
+and an end-to-end deployment test. See Cloudflare's [Workers email handler
+documentation](https://developers.cloudflare.com/email-service/api/route-emails/email-handler/).
 
 Do not expose a public email webhook as a substitute without adding provider
 signature or secret-token verification first.
