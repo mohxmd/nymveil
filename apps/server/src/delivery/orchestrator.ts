@@ -7,11 +7,7 @@ import {
 } from "@nymveil/core";
 import type { NotificationResult } from "@nymveil/notifications";
 
-import type {
-  NymveilDeliveryEvent,
-  NymveilNotificationChannel,
-  NymveilNotificationDispatcher,
-} from "./notifications";
+import type { NymveilDeliveryEvent, NymveilNotificationDispatcher } from "./notifications";
 
 const supportedNotificationChannels = ["discord", "telegram"] as const;
 
@@ -236,6 +232,17 @@ async function deliverToDestination({
     };
   }
 
+  if (destination.provider === "dashboard") {
+    const succeeded = await attemptRepository.update(successAttempt(attempt, clock.now()));
+
+    return {
+      destinationId: destination.id,
+      provider: destination.provider,
+      status: "succeeded",
+      attempt: succeeded,
+    };
+  }
+
   if (!isSupportedNotificationChannel(destination.provider)) {
     const failed = failureAttempt(attempt, "configuration_error", clock.now());
     const updated = await attemptRepository.update(failed);
@@ -249,9 +256,7 @@ async function deliverToDestination({
   }
 
   try {
-    const results = await notificationDispatcher.dispatch(event, [
-      destination.provider as NymveilNotificationChannel,
-    ]);
+    const results = await notificationDispatcher.dispatch(event, destination);
     const result = results[0];
 
     if (!result || !result.success) {

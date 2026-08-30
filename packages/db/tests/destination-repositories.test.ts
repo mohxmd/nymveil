@@ -4,7 +4,7 @@ import { createClient } from "@libsql/client";
 import { createDbFromClient } from "../src/client";
 import { createDestinationRepository } from "../src/repositories/destination-repository";
 import { createIdentityDestinationRepository } from "../src/repositories/identity-destination-repository";
-import { domain, identity, user } from "../src/schema";
+import { destinationConfiguration, domain, identity, user } from "../src/schema";
 
 const now = new Date("2026-08-30T12:00:00.000Z");
 
@@ -15,6 +15,7 @@ async function createTestContext() {
     "0000_identity_model.sql",
     "0001_cloudy_molecule_man.sql",
     "0002_orange_deathbird.sql",
+    "0003_dear_plazm.sql",
   ]) {
     const migration = await Bun.file(new URL(`../src/migrations/${file}`, import.meta.url)).text();
 
@@ -88,5 +89,37 @@ describe("destination repositories", () => {
 
     await identityDestinationRepository.remove("identity-1", created.id);
     expect(await identityDestinationRepository.listByIdentityId("identity-1")).toEqual([]);
+  });
+
+  test("stores encrypted destination configuration separately from destination metadata", async () => {
+    const { db, destinationRepository } = await createTestContext();
+    const created = await destinationRepository.create({
+      id: "destination-2",
+      userId: "user-1",
+      provider: "discord",
+      label: "Discord",
+      targetRef: "discord-target-2",
+      enabled: true,
+      createdAt: now,
+      updatedAt: now,
+    });
+
+    await db.insert(destinationConfiguration).values({
+      destinationId: created.id,
+      ciphertext: "encrypted-value",
+      nonce: "nonce-value",
+      createdAt: now,
+      updatedAt: now,
+    });
+
+    expect(await db.select().from(destinationConfiguration)).toEqual([
+      {
+        destinationId: created.id,
+        ciphertext: "encrypted-value",
+        nonce: "nonce-value",
+        createdAt: now,
+        updatedAt: now,
+      },
+    ]);
   });
 });

@@ -1,10 +1,10 @@
 import {
-  NoNotificationChannelsError,
   NotificationClient,
   type NotificationClientConfig,
   type NotificationPayload,
   type NotificationResult,
 } from "@nymveil/notifications";
+import type { DestinationRecord } from "@nymveil/core";
 import { z } from "zod";
 
 const notificationConfigSchema = z.object({
@@ -39,9 +39,13 @@ export interface NymveilDeliveryEvent {
 export interface NymveilNotificationDispatcher {
   dispatch(
     event: NymveilDeliveryEvent,
-    channels: readonly NymveilNotificationChannel[],
+    destination: DestinationRecord,
   ): Promise<NotificationResult[]>;
 }
+
+export type NymveilNotificationClientResolver = (
+  destination: DestinationRecord,
+) => Promise<Pick<NotificationClient, "send"> | null>;
 
 export function parseNotificationConfig(input: unknown): NymveilNotificationConfig {
   return notificationConfigSchema.parse(input);
@@ -53,17 +57,22 @@ export function createNymveilNotificationClient(input: unknown): NotificationCli
 }
 
 export function createNymveilNotificationDispatcher(
-  client: Pick<NotificationClient, "send">,
+  resolveClient: NymveilNotificationClientResolver,
 ): NymveilNotificationDispatcher {
   return {
-    async dispatch(event, channels) {
-      const selectedChannels = [...new Set(channels)];
-
-      if (selectedChannels.length === 0) {
-        throw new NoNotificationChannelsError();
+    async dispatch(event, destination) {
+      const client = await resolveClient(destination);
+      if (!client) {
+        return [
+          {
+            success: false,
+            channel: destination.provider,
+            error: `Provider for channel '${destination.provider}' is not configured`,
+          },
+        ];
       }
 
-      return client.send(toNotificationPayload(event), { channels: selectedChannels });
+      return client.send(toNotificationPayload(event), { channels: [destination.provider] });
     },
   };
 }

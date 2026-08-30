@@ -67,8 +67,8 @@ function createContext(
     clock: { now: () => now },
     idGenerator: { generate: () => `attempt-${++id}` },
     notificationDispatcher: {
-      dispatch: async (_event, channels) => {
-        const provider = channels[0] ?? "unknown";
+      dispatch: async (_event, destination) => {
+        const provider = destination.provider;
         sentProviders.push(provider);
         return [await send(provider)];
       },
@@ -121,15 +121,15 @@ describe("delivery orchestrator", () => {
     expect(context.sentProviders).toEqual([]);
   });
 
-  test("records unsupported destinations as configuration failures", async () => {
+  test("records dashboard destinations as successful metadata deliveries", async () => {
     const context = createContext();
 
     const result = await context.orchestrator.deliver(event, [
       destination("destination-1", "dashboard"),
     ]);
 
-    expect(result.status).toBe("failed");
-    expect(result.outcomes[0]?.attempt?.errorCode).toBe("configuration_error");
+    expect(result.status).toBe("succeeded");
+    expect(result.outcomes[0]?.attempt?.errorCode).toBeNull();
     expect(context.sentProviders).toEqual([]);
   });
 

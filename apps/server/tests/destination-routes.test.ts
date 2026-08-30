@@ -54,7 +54,9 @@ function createDestinationUseCases(
 ): DestinationUseCases {
   return {
     listDestinations: async () => [destination],
+    createDestination: async () => ({ ...destination, id: "destination-created" }),
     updateDestination: async () => ({ ...destination, enabled: false }),
+    deleteDestination: async () => undefined,
     listIdentityDestinations: async () =>
       [{ destination, selected: true }] satisfies IdentityDestinationOption[],
     addIdentityDestination: async () => ({
@@ -108,8 +110,9 @@ describe("destination routes", () => {
     let received: { userId: string; destinationId: string; enabled: boolean } | undefined;
     const app = createTestApp({
       updateDestination: async (userId, destinationId, input) => {
-        received = { userId, destinationId, enabled: input.enabled };
-        return { ...destination, enabled: input.enabled };
+        const enabled = input.enabled ?? destination.enabled;
+        received = { userId, destinationId, enabled };
+        return { ...destination, enabled };
       },
     });
 
@@ -128,6 +131,45 @@ describe("destination routes", () => {
     expect((await response.json()) as unknown).toMatchObject({
       destination: { enabled: false },
     });
+  });
+
+  test("creates a dashboard destination without accepting provider secrets", async () => {
+    let received: unknown;
+    const app = createTestApp({
+      createDestination: async (_userId, input) => {
+        received = input;
+        return { ...destination, provider: "dashboard", targetRef: null };
+      },
+    });
+
+    const response = await app.request("/api/destinations", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ provider: "dashboard", label: "Dashboard", config: {} }),
+    });
+
+    expect(response.status).toBe(201);
+    expect(received).toEqual({ provider: "dashboard", label: "Dashboard", targetRef: undefined });
+    expect((await response.json()) as unknown).toMatchObject({
+      destination: { provider: "dashboard", available: true },
+    });
+  });
+
+  test("deletes an owned destination through the authenticated use-case boundary", async () => {
+    let received: { userId: string; destinationId: string } | undefined;
+    const app = createTestApp({
+      deleteDestination: async (userId, destinationId) => {
+        received = { userId, destinationId };
+      },
+    });
+
+    const response = await app.request("/api/destinations/destination-1", {
+      method: "DELETE",
+    });
+
+    expect(response.status).toBe(200);
+    expect(received).toEqual({ userId: "user-1", destinationId: "destination-1" });
+    expect((await response.json()) as unknown).toEqual({ ok: true });
   });
 
   test("supports identity route selection changes", async () => {

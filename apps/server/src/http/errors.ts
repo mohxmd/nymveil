@@ -10,6 +10,7 @@ export type ApiErrorCode =
   | "bad_request"
   | "not_found"
   | "conflict"
+  | "service_unavailable"
   | "rate_limited"
   | "internal_error";
 

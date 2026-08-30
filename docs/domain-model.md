@@ -121,7 +121,7 @@ A destination is a user-owned delivery target, such as Discord or Telegram.
 | `createdAt` | Creation time                                                            |
 | `updatedAt` | Last mutation time                                                       |
 
-The dashboard destination has no external target and therefore uses `targetRef = NULL`. Provider-specific credential values must not be stored as ordinary plaintext columns. The exact protected configuration mechanism is an implementation and deployment concern.
+The dashboard destination has no external target and therefore uses `targetRef = NULL`. Provider-specific credential values are stored separately from destination metadata as application-encrypted ciphertext. The encryption key is supplied through deployment secret configuration and is never persisted in the database.
 
 Destinations are independently enableable. A configured destination is not automatically selected for every identity.
 

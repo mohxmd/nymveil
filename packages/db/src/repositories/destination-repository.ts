@@ -79,5 +79,11 @@ export function createDestinationRepository(db: Database): DestinationRepository
 
       return mapDestinationRow(row);
     },
+
+    async delete(userId, id) {
+      await db
+        .delete(destination)
+        .where(and(eq(destination.id, id), eq(destination.userId, userId)));
+    },
   };
 }

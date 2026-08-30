@@ -1,19 +1,57 @@
 import type { DestinationProvider, DestinationUseCases } from "@nymveil/core";
 
+import type { DestinationModel } from "./model";
+import { DestinationConfigurationError } from "../../delivery/errors";
+import type { DestinationCredentialStore } from "./ports";
+
 export interface DestinationServiceDependencies {
   createDestinationUseCases: () => DestinationUseCases;
+  credentials?: DestinationCredentialStore;
 }
 
 export function createDestinationService({
   createDestinationUseCases,
+  credentials,
 }: DestinationServiceDependencies) {
   return {
+    async createDestination(userId: string, input: DestinationModel["createBody"]) {
+      if (input.provider !== "dashboard" && !credentials) {
+        throw new DestinationConfigurationError();
+      }
+
+      const destination = await createDestinationUseCases().createDestination(userId, {
+        provider: input.provider,
+        label: input.label,
+        targetRef: input.targetRef,
+      });
+
+      try {
+        if (credentials) {
+          await credentials.save(destination.id, input.config);
+        }
+      } catch (error) {
+        await createDestinationUseCases().deleteDestination(userId, destination.id);
+        throw error;
+      }
+
+      return destination;
+    },
+
     listDestinations(userId: string) {
       return createDestinationUseCases().listDestinations(userId);
     },
 
-    updateDestination(userId: string, destinationId: string, enabled: boolean) {
-      return createDestinationUseCases().updateDestination(userId, destinationId, { enabled });
+    updateDestination(
+      userId: string,
+      destinationId: string,
+      input: DestinationModel["updateBody"],
+    ) {
+      return createDestinationUseCases().updateDestination(userId, destinationId, input);
+    },
+
+    async deleteDestination(userId: string, destinationId: string) {
+      await createDestinationUseCases().deleteDestination(userId, destinationId);
+      await credentials?.delete(destinationId);
     },
 
     listIdentityDestinations(userId: string, identityId: string) {

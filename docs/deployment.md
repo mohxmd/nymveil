@@ -11,8 +11,8 @@ creates or updates the Worker, the static website, and the Worker bindings.
 - A strong Better Auth secret stored outside Git.
 - An exact HTTPS origin for the dashboard in `CORS_ORIGIN`.
 - A verified custom domain prepared for Email Routing.
-- Provider credentials stored in deployment secret storage when delivery
-  providers are enabled.
+- A base64-encoded 32-byte `DESTINATION_ENCRYPTION_KEY` stored in deployment
+  secret storage. It encrypts provider credentials before they are persisted.
 
 Alchemy can use the authenticated Cloudflare profile. If the account is not
 selected automatically, provide it explicitly:
@@ -29,12 +29,13 @@ for account authentication details.
 Create `apps/server/.env` locally for Alchemy to load. The infrastructure file
 reads these values and marks sensitive values as redacted deployment inputs:
 
-| Variable              | Required             | Description                                   |
-| --------------------- | -------------------- | --------------------------------------------- |
-| `DATABASE_URL`        | Yes                  | Turso/libSQL database URL                     |
-| `DATABASE_AUTH_TOKEN` | Yes for remote Turso | Database authentication token                 |
-| `BETTER_AUTH_SECRET`  | Yes                  | Private Better Auth signing/encryption secret |
-| `CORS_ORIGIN`         | Yes                  | One exact HTTPS dashboard origin              |
+| Variable                     | Required             | Description                                   |
+| ---------------------------- | -------------------- | --------------------------------------------- |
+| `DATABASE_URL`               | Yes                  | Turso/libSQL database URL                     |
+| `DATABASE_AUTH_TOKEN`        | Yes for remote Turso | Database authentication token                 |
+| `BETTER_AUTH_SECRET`         | Yes                  | Private Better Auth signing/encryption secret |
+| `CORS_ORIGIN`                | Yes                  | One exact HTTPS dashboard origin              |
+| `DESTINATION_ENCRYPTION_KEY` | Yes                  | Base64-encoded 32-byte AES-GCM key            |
 
 `BETTER_AUTH_URL` is derived from the deployed API Worker URL. The web site's
 `PUBLIC_SERVER_URL` is derived from that same Worker output during the Alchemy
@@ -132,20 +133,19 @@ signature or secret-token verification first.
 
 ## Discord and Telegram delivery
 
-The reusable notification package supports Discord and Telegram, but the
-application-level production wiring for provider credentials and destination
-management is still being completed. When enabled:
+The reusable notification package supports Discord and Telegram, and the
+application resolves each destination's encrypted provider configuration at
+delivery time. When enabled:
 
-- Store Discord webhook URLs and Telegram bot tokens in protected deployment
-  secrets.
-- Store only safe destination references in the database.
-- Never return or log provider credentials.
+- Store the destination encryption key in protected deployment secret storage.
+- Provider credentials are encrypted before they are persisted; only safe
+  destination references are stored in the public destination metadata row.
+- Never return or log provider credentials or decrypted configuration.
 - Test each provider independently because one failed destination must not stop
   another selected destination.
 
-Provider-specific setup should be added here when the server wiring and
-destination-management flow are complete; this avoids documenting environment
-variables that the current Worker does not consume.
+Provider-specific credentials are submitted through the authenticated
+destination-management API and are not configured as global Worker variables.
 
 ## Operational checks
 

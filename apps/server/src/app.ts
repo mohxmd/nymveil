@@ -19,6 +19,7 @@ import { createDomainRoutes } from "./modules/domains";
 import { createDestinationRoutes } from "./modules/destinations";
 import { createDeliveryMetadataRoutes } from "./modules/delivery-metadata";
 import { createApiRateLimitMiddleware, type RateLimiter } from "./http/rate-limit";
+import type { DestinationCredentialStore } from "./modules/destinations/ports";
 
 export interface AppDependencies {
   auth: AuthInstance;
@@ -29,6 +30,7 @@ export interface AppDependencies {
   createIdentityUseCases?: () => IdentityUseCases;
   createDomainRepository?: () => DomainRepository;
   createDestinationUseCases?: () => DestinationUseCases;
+  destinationCredentials?: DestinationCredentialStore;
   createDeliveryMetadataUseCases?: () => DeliveryMetadataUseCases;
 }
 
@@ -41,6 +43,7 @@ export function createApp({
   createIdentityUseCases,
   createDomainRepository,
   createDestinationUseCases,
+  destinationCredentials,
   createDeliveryMetadataUseCases,
 }: AppDependencies) {
   const app = serverFactory.createApp();
@@ -92,7 +95,14 @@ export function createApp({
   }
 
   if (createDestinationUseCases) {
-    app.route("/api", createDestinationRoutes({ auth, createDestinationUseCases }));
+    app.route(
+      "/api",
+      createDestinationRoutes({
+        auth,
+        createDestinationUseCases,
+        credentials: destinationCredentials,
+      }),
+    );
   }
 
   if (createDeliveryMetadataUseCases) {

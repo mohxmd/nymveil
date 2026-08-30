@@ -19,6 +19,17 @@ const event = {
   subject: "Welcome",
 };
 
+const discordDestination = {
+  id: "destination-discord",
+  userId: "user-1",
+  provider: "discord" as const,
+  label: "Discord",
+  targetRef: "discord-target-1",
+  enabled: true,
+  createdAt: event.receivedAt,
+  updatedAt: event.receivedAt,
+};
+
 function createFakeProvider(channel: "discord" | "telegram", calls: NotificationPayload[]) {
   return {
     send: async (payload: NotificationPayload) => {
@@ -37,9 +48,9 @@ describe("Nymveil notification dispatcher", () => {
         telegram: createFakeProvider("telegram", calls),
       },
     });
-    const dispatcher = createNymveilNotificationDispatcher(client);
+    const dispatcher = createNymveilNotificationDispatcher(async () => client);
 
-    const results = await dispatcher.dispatch(event, ["discord"]);
+    const results = await dispatcher.dispatch(event, discordDestination);
 
     expect(results).toEqual([{ channel: "discord", success: true }]);
     expect(calls).toEqual([
@@ -56,11 +67,16 @@ describe("Nymveil notification dispatcher", () => {
     ]);
   });
 
-  test("rejects delivery without explicit channels", async () => {
-    const client = new NotificationClient();
-    const dispatcher = createNymveilNotificationDispatcher(client);
+  test("returns a configuration failure when a destination has no client", async () => {
+    const dispatcher = createNymveilNotificationDispatcher(async () => null);
 
-    await expect(dispatcher.dispatch(event, [])).rejects.toBeInstanceOf(Error);
+    await expect(dispatcher.dispatch(event, discordDestination)).resolves.toEqual([
+      {
+        channel: "discord",
+        success: false,
+        error: "Provider for channel 'discord' is not configured",
+      },
+    ]);
   });
 
   test("validates provider configuration before creating the client", () => {

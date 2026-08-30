@@ -12,6 +12,7 @@ import {
   createDeliveryMetadataMaintenanceRepository,
   createDeliveryAttemptRepository,
   createDestinationRepository,
+  createDestinationConfigurationRepository,
   createDomainRepository,
   createIdentityDestinationRepository,
   createIdentityMaintenanceRepository,
@@ -22,16 +23,19 @@ import { initLogger } from "evlog";
 
 import { createApp } from "./app";
 import { createDeliveryOrchestrator } from "./delivery/orchestrator";
-import {
-  createNymveilNotificationClient,
-  createNymveilNotificationDispatcher,
-} from "./delivery/notifications";
+import { createNymveilNotificationDispatcher } from "./delivery/notifications";
 import { createInboundEmailHandler } from "./email/composition";
+import { createDestinationCredentialStore } from "./delivery/destination-credentials";
+import { createDestinationNotificationResolver } from "./delivery/destination-notification-resolver";
 import { asScheduledCleanupJob, createScheduledCleanupHandler } from "./maintenance/cleanup";
 
 initLogger({ env: { service: "nymveil-server" } });
 
 const db = createDb();
+const destinationCredentials = createDestinationCredentialStore(
+  createDestinationConfigurationRepository(db),
+  env.DESTINATION_ENCRYPTION_KEY,
+);
 
 if (!env.API_RATE_LIMITER || !env.IDENTITY_CREATION_RATE_LIMITER) {
   throw new Error("Production rate-limit bindings are required.");
@@ -55,6 +59,7 @@ const app = createApp({
       identityDestinationRepository: createIdentityDestinationRepository(db),
       identityRepository: createIdentityRepository(db),
     }),
+  destinationCredentials,
   createDeliveryMetadataUseCases: () =>
     new DeliveryMetadataUseCases({
       deliveryAttemptRepository: createDeliveryAttemptRepository(db),
@@ -71,7 +76,7 @@ const inboundEmailHandler = createInboundEmailHandler({
   delivery: createDeliveryOrchestrator({
     attemptRepository: createDeliveryAttemptRepository(db),
     notificationDispatcher: createNymveilNotificationDispatcher(
-      createNymveilNotificationClient({}),
+      createDestinationNotificationResolver(destinationCredentials),
     ),
   }),
 });

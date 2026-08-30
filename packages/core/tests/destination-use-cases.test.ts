@@ -63,6 +63,12 @@ function createContext(initialRoutes: IdentityDestinationRecord[] = []) {
       destinationRecords[index] = destination;
       return destination;
     },
+    delete: async (userId, id) => {
+      const index = destinationRecords.findIndex(
+        (destination) => destination.id === id && destination.userId === userId,
+      );
+      if (index !== -1) destinationRecords.splice(index, 1);
+    },
   };
   const identityDestinationRepository: IdentityDestinationRepository = {
     listByIdentityId: async (identityId) =>
@@ -115,6 +121,33 @@ describe("DestinationUseCases", () => {
     await expect(
       useCases.updateDestination("user-2", "destination-1", { enabled: true }),
     ).rejects.toMatchObject<Partial<DestinationDomainError>>({ code: "destination_not_found" });
+  });
+
+  test("creates validated destinations and deletes only owned records", async () => {
+    const { useCases } = createContext();
+
+    const created = await useCases.createDestination("user-1", {
+      provider: "dashboard",
+      label: "  Dashboard  ",
+    });
+
+    expect(created).toMatchObject({
+      userId: "user-1",
+      provider: "dashboard",
+      label: "Dashboard",
+      targetRef: null,
+      enabled: true,
+    });
+
+    await expect(
+      useCases.createDestination("user-1", {
+        provider: "discord",
+        label: "Discord",
+      }),
+    ).rejects.toMatchObject<Partial<DestinationDomainError>>({ code: "invalid_input" });
+
+    await useCases.deleteDestination("user-1", "destination-1");
+    await expect(useCases.listDestinations("user-1")).resolves.toHaveLength(1);
   });
 
   test("manages identity routes idempotently and enforces ownership", async () => {
