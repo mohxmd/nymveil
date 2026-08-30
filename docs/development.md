@@ -72,7 +72,7 @@ over `db:push` when testing the real production workflow.
 | ----------------- | ---------------------------------------------------- |
 | `bun run dev`     | Start the configured workspace development processes |
 | `bun run dev:web` | Start the SvelteKit web application directly         |
-| `bun run check`   | Run formatting/lint fixes and all type checks        |
+| `bun run check`   | Run formatting/lint checks and all type checks       |
 | `bun run test`    | Run core, server, database, and notification tests   |
 | `bun run build`   | Build the Worker and SvelteKit applications          |
 | `bun run format`  | Format repository files                              |
@@ -95,7 +95,7 @@ bun run build
 For database changes, also run:
 
 ```bash
-bunx drizzle-kit check --config drizzle.config.ts
+bun x drizzle-kit check --config drizzle.config.ts
 ```
 
 Run that command from `packages/db`. Keep schema changes, generated SQL, and

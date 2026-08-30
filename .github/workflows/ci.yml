@@ -35,7 +35,7 @@ jobs:
         run: bun install --frozen-lockfile
 
       - name: Check formatting
-        run: bunx vp fmt --check
+        run: bun x vp fmt --check
 
       - name: Check lint
         run: bun run lint
@@ -48,7 +48,7 @@ jobs:
 
       - name: Verify migration history
         working-directory: packages/db
-        run: bunx drizzle-kit check --config drizzle.config.ts
+        run: bun x drizzle-kit check --config drizzle.config.ts
 
       - name: Build applications
         run: bun run build

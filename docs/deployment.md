@@ -24,6 +24,9 @@ CLOUDFLARE_ACCOUNT_ID=<cloudflare-account-id> bun run deploy
 See the [Alchemy Cloudflare authentication guide](https://alchemy.run/guides/cloudflare/)
 for account authentication details.
 
+Use the [first-release checklist](./release-checklist.md) for the complete
+production gate, smoke tests, and rollback procedure.
+
 ## Environment configuration
 
 Create `apps/server/.env` locally for Alchemy to load. The infrastructure file
@@ -65,7 +68,7 @@ production deployment shortcut.
 
    ```bash
    cd packages/db
-   bunx drizzle-kit check --config drizzle.config.ts
+   bun x drizzle-kit check --config drizzle.config.ts
    cd ../..
    ```
 
@@ -184,3 +187,20 @@ After deployment:
 `bun run destroy` removes the Alchemy-managed stack. Use it only for an
 explicitly identified development or preview environment after confirming the
 target account and state. Never use it as a production troubleshooting step.
+
+## Application rollback
+
+Rollback is performed by deploying the last known-good application commit:
+
+```bash
+bun install --frozen-lockfile
+bun run check
+bun run test
+bun run build
+bun run deploy
+```
+
+Do not reverse an already-applied database migration as part of an application
+rollback. Migrations must remain compatible with the previous application
+version, or a reviewed forward migration must be prepared first. If a secret or
+provider credential may have been exposed, rotate it before restoring traffic.
