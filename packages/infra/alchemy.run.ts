@@ -10,6 +10,7 @@ config({ path: "../../apps/server/.env" });
 
 export const server = Cloudflare.Worker("server", {
   main: "../../apps/server/src/index.ts",
+  crons: ["0 * * * *"],
   compatibility: {
     flags: ["nodejs_compat"],
   },
@@ -19,6 +20,21 @@ export const server = Cloudflare.Worker("server", {
     BETTER_AUTH_SECRET: Config.redacted("BETTER_AUTH_SECRET"),
     BETTER_AUTH_URL: Cloudflare.Worker.URL,
     DATABASE_AUTH_TOKEN: Config.redacted("DATABASE_AUTH_TOKEN"),
+    DESTINATION_ENCRYPTION_KEY: Config.redacted("DESTINATION_ENCRYPTION_KEY"),
+    API_RATE_LIMITER: Cloudflare.RateLimit("API_RATE_LIMITER", {
+      namespaceId: 1001,
+      simple: {
+        limit: 120,
+        period: 60,
+      },
+    }),
+    IDENTITY_CREATION_RATE_LIMITER: Cloudflare.RateLimit("IDENTITY_CREATION_RATE_LIMITER", {
+      namespaceId: 1002,
+      simple: {
+        limit: 10,
+        period: 60,
+      },
+    }),
   },
   dev: {
     port: 3000,

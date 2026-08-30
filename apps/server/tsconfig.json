@@ -3,6 +3,7 @@
   "compilerOptions": {
     "composite": true,
     "outDir": "dist",
+    "types": ["node", "bun", "@cloudflare/workers-types"],
     "paths": {
       "@/*": ["./src/*"]
     },
