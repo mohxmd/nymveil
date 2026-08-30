@@ -1,8 +1,14 @@
-import { DestinationUseCases, ExpirationCleanup, IdentityUseCases } from "@nymveil/core";
+import {
+  DeliveryMetadataUseCases,
+  DestinationUseCases,
+  ExpirationCleanup,
+  IdentityUseCases,
+} from "@nymveil/core";
 import { createAuth } from "@nymveil/auth";
 import {
   createDb,
   createDeliveryMetadataMaintenanceRepository,
+  createDeliveryAttemptRepository,
   createDestinationRepository,
   createDomainRepository,
   createIdentityDestinationRepository,
@@ -34,6 +40,10 @@ const app = createApp({
       destinationRepository: createDestinationRepository(db),
       identityDestinationRepository: createIdentityDestinationRepository(db),
       identityRepository: createIdentityRepository(db),
+    }),
+  createDeliveryMetadataUseCases: () =>
+    new DeliveryMetadataUseCases({
+      deliveryAttemptRepository: createDeliveryAttemptRepository(db),
     }),
 });
 

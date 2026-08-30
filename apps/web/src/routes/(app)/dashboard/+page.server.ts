@@ -15,6 +15,8 @@ import {
   routeResponseSchema,
   updateIdentityInputSchema,
 } from "$lib/features/identities/schemas";
+import { deliveryAttemptListResponseSchema } from "$lib/features/delivery/schemas";
+import type { DeliveryAttempt } from "$lib/features/delivery/types";
 import { toIsoDateTime } from "$lib/features/identities/dates";
 import type { IdentityDestinationOption, IdentityFormAction } from "$lib/features/identities/types";
 import { ApiRequestError, requestJson } from "$lib/server/api/client";
@@ -74,6 +76,23 @@ export const load: PageServerLoad = async ({ fetch }) => {
       requestJson(fetch, "/api/domains", domainListResponseSchema),
       requestJson(fetch, "/api/destinations", destinationListResponseSchema),
     ]);
+    let deliveryAttempts: DeliveryAttempt[] = [];
+    let deliveryError: string | null = null;
+
+    try {
+      const deliveryResponse = await requestJson(
+        fetch,
+        "/api/delivery-attempts?limit=50",
+        deliveryAttemptListResponseSchema,
+      );
+      deliveryAttempts = deliveryResponse.attempts;
+    } catch (error) {
+      if (error instanceof ApiRequestError && error.status === 401) {
+        redirect(303, "/login");
+      }
+
+      deliveryError = "We couldn't load delivery activity right now.";
+    }
     const identityDestinations = await Promise.all(
       identityResponse.identities.map(async (identity) => {
         const response = await requestJson(
@@ -94,6 +113,8 @@ export const load: PageServerLoad = async ({ fetch }) => {
       domains: domainResponse.domains,
       destinations: destinationResponse.destinations,
       identityDestinations: identityDestinationsById,
+      deliveryAttempts,
+      deliveryError,
       loadError: null,
     };
   } catch (error) {
@@ -106,6 +127,8 @@ export const load: PageServerLoad = async ({ fetch }) => {
       domains: [],
       destinations: [],
       identityDestinations: emptyIdentityDestinations,
+      deliveryAttempts: [],
+      deliveryError: null,
       loadError: "We couldn't load your identities right now.",
     };
   }

@@ -1,6 +1,7 @@
 export * from "./delivery/errors";
 export * from "./delivery/ports";
 export * from "./delivery/types";
+export * from "./delivery/use-cases";
 export * from "./destination/ports";
 export * from "./destination/routing";
 export * from "./destination/types";

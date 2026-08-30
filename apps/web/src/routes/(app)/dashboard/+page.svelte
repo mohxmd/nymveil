@@ -3,6 +3,7 @@
 
   import { Alert, AlertDescription, AlertTitle } from "$lib/components/ui/alert";
   import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "$lib/components/ui/card";
+  import DeliveryAttemptList from "$lib/features/delivery/components/delivery-attempt-list.svelte";
   import DestinationOverview from "$lib/features/identities/components/destination-overview.svelte";
   import CreateIdentityForm from "$lib/features/identities/components/create-identity-form.svelte";
   import IdentityCard from "$lib/features/identities/components/identity-card.svelte";
@@ -68,4 +69,17 @@
       {/if}
     </div>
   </section>
+
+  {#if data.deliveryError}
+    <Alert variant="destructive">
+      <AlertTitle>Unable to load delivery activity</AlertTitle>
+      <AlertDescription>{data.deliveryError}</AlertDescription>
+    </Alert>
+  {/if}
+
+  <DeliveryAttemptList
+    attempts={data.deliveryAttempts}
+    identities={data.identities}
+    destinations={data.destinations}
+  />
 </div>

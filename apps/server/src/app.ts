@@ -2,7 +2,12 @@ import { createAuthMiddleware, type BetterAuthInstance } from "evlog/better-auth
 import { evlog } from "evlog/hono";
 import { cors } from "hono/cors";
 
-import type { DestinationUseCases, DomainRepository, IdentityUseCases } from "@nymveil/core";
+import type {
+  DeliveryMetadataUseCases,
+  DestinationUseCases,
+  DomainRepository,
+  IdentityUseCases,
+} from "@nymveil/core";
 
 import type { AuthInstance } from "./http/types";
 import { apiErrorHandler, apiNotFoundHandler } from "./http/errors";
@@ -11,6 +16,7 @@ import { serverFactory } from "./http/types";
 import { createIdentityRoutes } from "./modules/identities";
 import { createDomainRoutes } from "./modules/domains";
 import { createDestinationRoutes } from "./modules/destinations";
+import { createDeliveryMetadataRoutes } from "./modules/delivery-metadata";
 
 export interface AppDependencies {
   auth: AuthInstance;
@@ -19,6 +25,7 @@ export interface AppDependencies {
   createIdentityUseCases?: () => IdentityUseCases;
   createDomainRepository?: () => DomainRepository;
   createDestinationUseCases?: () => DestinationUseCases;
+  createDeliveryMetadataUseCases?: () => DeliveryMetadataUseCases;
 }
 
 export function createApp({
@@ -28,6 +35,7 @@ export function createApp({
   createIdentityUseCases,
   createDomainRepository,
   createDestinationUseCases,
+  createDeliveryMetadataUseCases,
 }: AppDependencies) {
   const app = serverFactory.createApp();
 
@@ -70,6 +78,10 @@ export function createApp({
 
   if (createDestinationUseCases) {
     app.route("/api", createDestinationRoutes({ auth, createDestinationUseCases }));
+  }
+
+  if (createDeliveryMetadataUseCases) {
+    app.route("/api", createDeliveryMetadataRoutes({ auth, createDeliveryMetadataUseCases }));
   }
 
   app.get("/api/me", requireSession(auth), (c) => {
