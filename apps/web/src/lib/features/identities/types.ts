@@ -21,11 +21,29 @@ export interface Domain {
   status: "pending" | "verified" | "revoked";
 }
 
-export type IdentityFormAction = "create" | "update" | "torch";
+export interface Destination {
+  id: string;
+  provider: string;
+  label: string;
+  enabled: boolean;
+  available: boolean;
+}
+
+export interface IdentityDestinationOption extends Destination {
+  selected: boolean;
+}
+
+export type IdentityFormAction =
+  | "create"
+  | "update"
+  | "torch"
+  | "toggle-destination"
+  | "toggle-route";
 
 export interface IdentityFormState {
   action: IdentityFormAction;
   identityId?: string;
+  destinationId?: string;
   error?: string;
   success?: boolean;
 }

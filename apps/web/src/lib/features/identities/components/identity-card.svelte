@@ -7,19 +7,22 @@
   import { Input } from "$lib/components/ui/input";
   import { Label } from "$lib/components/ui/label";
   import { formatDate, toDateTimeLocal } from "../dates";
-  import type { Identity, IdentityFormState } from "../types";
+  import type { Identity, IdentityDestinationOption, IdentityFormState } from "../types";
   import IdentityStatusBadge from "./identity-status-badge.svelte";
 
   let {
     identity,
+    destinations,
     form,
   }: {
     identity: Identity;
+    destinations: IdentityDestinationOption[];
     form: IdentityFormState | null | undefined;
   } = $props();
 
   let updateSubmitting = $state(false);
   let torchSubmitting = $state(false);
+  let routeSubmittingId = $state<string | null>(null);
   let dialogOpen = $state(false);
 
   const updateError = $derived(
@@ -29,6 +32,9 @@
     form?.action === "torch" && form.identityId === identity.id ? form.error : undefined,
   );
   const isMutable = $derived(identity.status === "active");
+  const routeError = $derived(
+    form?.action === "toggle-route" && form.identityId === identity.id ? form.error : undefined,
+  );
 
   const trackUpdate: SubmitFunction = () => {
     updateSubmitting = true;
@@ -48,6 +54,21 @@
       if (result.type === "success") dialogOpen = false;
     };
   };
+
+  const trackRoute: SubmitFunction = ({ formData }) => {
+    const destinationId = formData.get("destinationId");
+    routeSubmittingId = typeof destinationId === "string" ? destinationId : null;
+
+    return async ({ update }) => {
+      await update();
+      routeSubmittingId = null;
+    };
+  };
+
+  function submitRoute(event: Event) {
+    const input = event.currentTarget as HTMLInputElement;
+    input.form?.requestSubmit();
+  }
 </script>
 
 <Card class="h-full">
@@ -95,6 +116,46 @@
       <p class="border-t pt-4 text-sm text-muted-foreground">
         This identity is {identity.status} and can no longer be changed.
       </p>
+    {/if}
+
+    {#if destinations.length > 0}
+      <div class="grid gap-3 border-t pt-4">
+        <div>
+          <h3 class="text-sm font-medium">Route to</h3>
+          <p class="text-sm text-muted-foreground">Select the destinations for this identity.</p>
+        </div>
+        <div class="grid gap-2">
+          {#each destinations as destination (destination.id)}
+            <form method="POST" action="?/toggle-route" use:enhance={trackRoute} class="flex items-center justify-between gap-3 rounded-lg border px-3 py-2">
+              <input type="hidden" name="identityId" value={identity.id} />
+              <input type="hidden" name="destinationId" value={destination.id} />
+              <input type="hidden" name="selected" value={destination.selected ? "false" : "true"} />
+              <label class="flex min-w-0 items-center gap-3 text-sm">
+                <input
+                  type="checkbox"
+                  checked={destination.selected}
+                  disabled={!isMutable || routeSubmittingId === destination.id || (!destination.available && !destination.selected)}
+                  aria-label={`Route ${identity.address} to ${destination.label}`}
+                  onchange={submitRoute}
+                />
+                <span class="min-w-0 truncate">{destination.label}</span>
+              </label>
+              <span class="shrink-0 text-xs text-muted-foreground">
+                {#if !destination.available}
+                  Unavailable
+                {:else if !destination.enabled}
+                  Disabled
+                {:else}
+                  {destination.provider}
+                {/if}
+              </span>
+            </form>
+          {/each}
+        </div>
+        {#if routeError}
+          <p class="text-sm text-destructive" role="alert">{routeError}</p>
+        {/if}
+      </div>
     {/if}
   </CardContent>
 

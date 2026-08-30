@@ -4,6 +4,8 @@ export * from "./delivery/types";
 export * from "./destination/ports";
 export * from "./destination/routing";
 export * from "./destination/types";
+export * from "./destination/errors";
+export * from "./destination/use-cases";
 export * from "./identity/errors";
 export * from "./identity/ports";
 export * from "./identity/rules";

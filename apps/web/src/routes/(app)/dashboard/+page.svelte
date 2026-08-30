@@ -3,6 +3,7 @@
 
   import { Alert, AlertDescription, AlertTitle } from "$lib/components/ui/alert";
   import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "$lib/components/ui/card";
+  import DestinationOverview from "$lib/features/identities/components/destination-overview.svelte";
   import CreateIdentityForm from "$lib/features/identities/components/create-identity-form.svelte";
   import IdentityCard from "$lib/features/identities/components/identity-card.svelte";
   import type { IdentityFormState } from "$lib/features/identities/types";
@@ -25,6 +26,11 @@
       <AlertDescription>{data.loadError}</AlertDescription>
     </Alert>
   {/if}
+
+  <DestinationOverview
+    destinations={data.destinations}
+    form={form as IdentityFormState | null | undefined}
+  />
 
   <section class="grid gap-6 lg:grid-cols-[minmax(0,22rem)_1fr] lg:items-start">
     <CreateIdentityForm domains={data.domains} form={form as IdentityFormState | null | undefined} />
@@ -52,7 +58,11 @@
       {:else}
         <div class="grid gap-4 xl:grid-cols-2">
           {#each data.identities as identity (identity.id)}
-            <IdentityCard identity={identity} form={form as IdentityFormState | null | undefined} />
+            <IdentityCard
+              identity={identity}
+              destinations={data.identityDestinations[identity.id] ?? []}
+              form={form as IdentityFormState | null | undefined}
+            />
           {/each}
         </div>
       {/if}
