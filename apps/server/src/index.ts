@@ -1,41 +1,116 @@
+import {
+  DeliveryMetadataUseCases,
+  DomainUseCases,
+  DestinationUseCases,
+  ExpirationCleanup,
+  InboundRoutingUseCases,
+  IdentityUseCases,
+} from "@nymveil/core";
+import type { ExportedHandler } from "@cloudflare/workers-types";
 import { createAuth } from "@nymveil/auth";
+import {
+  createDb,
+  createDeliveryMetadataMaintenanceRepository,
+  createDeliveryAttemptRepository,
+  createDestinationRepository,
+  createDestinationConfigurationRepository,
+  createDomainRepository,
+  createIdentityDestinationRepository,
+  createIdentityMaintenanceRepository,
+  createIdentityRepository,
+} from "@nymveil/db";
 import { env } from "@nymveil/env/server";
 import { initLogger } from "evlog";
-import { createAuthMiddleware, type BetterAuthInstance } from "evlog/better-auth";
-import { evlog, type EvlogVariables } from "evlog/hono";
-import { Hono } from "hono";
-import { cors } from "hono/cors";
 
-initLogger({
-  env: { service: "nymveil-server" },
+import { createApp } from "./app";
+import { createDeliveryOrchestrator } from "./delivery/orchestrator";
+import { createNymveilNotificationDispatcher } from "./delivery/notifications";
+import { createInboundEmailHandler } from "./email/composition";
+import { createDestinationCredentialStore } from "./delivery/destination-credentials";
+import { createDestinationNotificationResolver } from "./delivery/destination-notification-resolver";
+import { asScheduledCleanupJob, createScheduledCleanupHandler } from "./maintenance/cleanup";
+import {
+  createCloudflareDomainVerifier,
+  createDomainChallengeHasher,
+  domainTokenGenerator,
+} from "./modules/domains/verification";
+
+initLogger({ env: { service: "nymveil-server" } });
+
+const db = createDb();
+const destinationCredentials = createDestinationCredentialStore(
+  createDestinationConfigurationRepository(db),
+  env.DESTINATION_ENCRYPTION_KEY,
+);
+
+if (!env.API_RATE_LIMITER || !env.IDENTITY_CREATION_RATE_LIMITER) {
+  throw new Error("Production rate-limit bindings are required.");
+}
+
+const app = createApp({
+  auth: createAuth(),
+  corsOrigin: env.CORS_ORIGIN,
+  apiRateLimiter: env.API_RATE_LIMITER,
+  identityCreationRateLimiter: env.IDENTITY_CREATION_RATE_LIMITER,
+  createDomainUseCases: () =>
+    new DomainUseCases({
+      domainRepository: createDomainRepository(db),
+      challengeHasher: createDomainChallengeHasher(),
+      tokenGenerator: domainTokenGenerator,
+      verifier: createCloudflareDomainVerifier(),
+    }),
+  createIdentityUseCases: () => {
+    return new IdentityUseCases({
+      domainRepository: createDomainRepository(db),
+      identityRepository: createIdentityRepository(db),
+    });
+  },
+  createDestinationUseCases: () =>
+    new DestinationUseCases({
+      destinationRepository: createDestinationRepository(db),
+      identityDestinationRepository: createIdentityDestinationRepository(db),
+      identityRepository: createIdentityRepository(db),
+    }),
+  destinationCredentials,
+  createDeliveryMetadataUseCases: () =>
+    new DeliveryMetadataUseCases({
+      deliveryAttemptRepository: createDeliveryAttemptRepository(db),
+    }),
 });
 
-const app = new Hono<EvlogVariables>();
-
-app.use(evlog());
-app.use("*", async (c, next) => {
-  const identifyUser = createAuthMiddleware(createAuth() as BetterAuthInstance, {
-    exclude: ["/api/auth/**"],
-    maskEmail: true,
-  });
-  await identifyUser(c.get("log"), c.req.raw.headers, c.req.path);
-  await next();
+const inboundEmailHandler = createInboundEmailHandler({
+  routing: new InboundRoutingUseCases({
+    domainRepository: createDomainRepository(db),
+    identityRepository: createIdentityRepository(db),
+    destinationRepository: createDestinationRepository(db),
+    identityDestinationRepository: createIdentityDestinationRepository(db),
+  }),
+  delivery: createDeliveryOrchestrator({
+    attemptRepository: createDeliveryAttemptRepository(db),
+    notificationDispatcher: createNymveilNotificationDispatcher(
+      createDestinationNotificationResolver(destinationCredentials),
+    ),
+  }),
 });
 
-app.use(
-  "/*",
-  cors({
-    origin: env.CORS_ORIGIN,
-    allowMethods: ["GET", "POST", "OPTIONS"],
-    allowHeaders: ["Content-Type", "Authorization"],
-    credentials: true,
+const scheduledCleanup = createScheduledCleanupHandler(
+  asScheduledCleanupJob({
+    run: () => {
+      const db = createDb();
+      const cleanup = new ExpirationCleanup({
+        identityMaintenanceRepository: createIdentityMaintenanceRepository(db),
+        deliveryMetadataMaintenanceRepository: createDeliveryMetadataMaintenanceRepository(db),
+      });
+
+      return cleanup.run();
+    },
   }),
 );
 
-app.on(["POST", "GET"], "/api/auth/*", (c) => createAuth().handler(c.req.raw));
+const worker = {
+  fetch: app.fetch,
+  scheduled: scheduledCleanup,
+  email: inboundEmailHandler,
+} satisfies Omit<ExportedHandler<Env>, "fetch"> & { fetch: typeof app.fetch };
 
-app.get("/", (c) => {
-  return c.text("OK");
-});
-
-export default app;
+export default worker;
